@@ -1,0 +1,13 @@
+{
+  "program_days": 90, "days_per_month": 30.4, "card_fee": 0.03, "phone_per_month": 50, "value_months": 12,
+  "scenarios": [
+    {"label": "Illustrative middle", "cpl": 40, "book": 0.12, "show": 0.75, "close": 0.24, "source": "Illustrative rates only. Replace with your own research."},
+    {"label": "Illustrative bad", "cpl": 60, "book": 0.06, "show": 0.6, "close": 0.2, "source": "Illustrative rates only."}
+  ],
+  "offers": [
+    {"label": "Flat fee, owner pays ads", "kind": "flat", "fee": 5000, "owner_pays_ads": true},
+    {"label": "Base + per shown tour, owner pays ads", "kind": "hybrid", "fee": 2000, "per_tour": 400, "owner_pays_ads": true},
+    {"label": "Per shown tour, agency pays ads", "kind": "per_tour", "fee": 1000, "per_tour": 900, "owner_pays_ads": false}
+  ],
+  "presets": [{"label": "Example 6-bed home", "beds": 6, "filled": 4, "rate": 5000, "spend": 50, "scenario": 0, "offer": 0, "guarantee": 10, "note": "Made-up example."}]
+}

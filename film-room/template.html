@@ -1,0 +1,1428 @@
+<title>Surven Film Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#F2F4F6; --surface:#FFFFFF; --surface-2:#E8ECEF; --line:#D3DAE0; --line-strong:#B4BFC8;
+  --ink:#111A22; --ink-2:#2B3742; --muted:#56636F;
+  --mark:#F2C200; --mark-soft:rgba(242,194,0,.30); --mark-ink:#7A5B00; --on-mark:#111A22;
+  --good:#1D8456; --good-bg:#DFF2E8; --warn:#A35C0B; --warn-bg:#FBEBD5; --bad:#BD3A31; --bad-bg:#F8E1DF; --info:#2A5C9E; --info-bg:#E1EAF6;
+  --shadow:0 1px 2px rgba(17,26,34,.06),0 4px 16px rgba(17,26,34,.06);
+  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0E141A; --surface:#151D25; --surface-2:#1C2630; --line:#283540; --line-strong:#3B4A57;
+    --ink:#E5EAEE; --ink-2:#C4CDD4; --muted:#8E9DAA;
+    --mark:#F5C518; --mark-soft:rgba(245,197,24,.22); --mark-ink:#F5C518; --on-mark:#111A22;
+    --good:#46C38B; --good-bg:#14302A; --warn:#F0A04B; --warn-bg:#35271A; --bad:#F2665D; --bad-bg:#3B1E1E; --info:#86ADE8; --info-bg:#1A2840;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0E141A; --surface:#151D25; --surface-2:#1C2630; --line:#283540; --line-strong:#3B4A57;
+  --ink:#E5EAEE; --ink-2:#C4CDD4; --muted:#8E9DAA;
+  --mark:#F5C518; --mark-soft:rgba(245,197,24,.22); --mark-ink:#F5C518; --on-mark:#111A22;
+  --good:#46C38B; --good-bg:#14302A; --warn:#F0A04B; --warn-bg:#35271A; --bad:#F2665D; --bad-bg:#3B1E1E; --info:#86ADE8; --info-bg:#1A2840;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--info)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;line-height:1.05;text-wrap:balance;margin:0}
+h2{font-size:30px}
+h3{font-size:21px}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.12em;font-size:13px;font-weight:600;color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+@media (min-width:720px){.wrap{padding-inline:28px}}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--ground) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:8px;font-family:var(--f-display);text-transform:uppercase;letter-spacing:.14em;font-weight:700;font-size:18px;white-space:nowrap}
+.brand b{background:var(--mark);color:var(--on-mark);padding:1px 7px 0;border-radius:3px}
+.brand span{color:var(--muted);font-weight:600}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{appearance:none;border:0;background:none;color:var(--muted);font:600 17px/1 var(--f-display);text-transform:uppercase;letter-spacing:.08em;padding:9px 12px 8px;border-radius:6px;cursor:pointer;position:relative}
+.tab:hover{color:var(--ink);background:var(--surface-2)}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:2px;height:4px;border-radius:3px;background:var(--mark);transform:rotate(-1.2deg)}
+.tab small{font:500 11px var(--f-mono);letter-spacing:0;color:var(--muted);margin-left:4px}
+
+main{padding-block:26px 80px}
+@media (max-width:600px){
+  .brand span{display:none}
+  .bar .wrap{gap:6px 10px;flex-wrap:nowrap}
+  .tabs{gap:0;flex-wrap:nowrap;overflow-x:auto;min-width:0}
+  .tab{padding:8px 6px 7px;font-size:14.5px;letter-spacing:.04em}
+  .brand{font-size:15px;letter-spacing:.1em}
+  .tab small{display:none}
+  .tab[aria-selected="true"]::after{left:6px;right:6px}
+  h2{font-size:26px}
+}
+.view{display:grid;gap:26px}
+.lede{max-width:68ch;color:var(--ink-2);font-size:16px}
+.section-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:8px 20px}
+
+/* cards & panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.grid-2{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--f-body);padding:5px 9px;border-radius:999px;white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.plain{background:var(--surface-2);color:var(--ink-2)}
+.hl{background:linear-gradient(transparent 58%,var(--mark-soft) 58%);padding:0 2px}
+blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--line-strong);background:var(--surface-2);border-radius:0 8px 8px 0;font-size:14.5px}
+blockquote .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:var(--muted)}
+.btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:600 14px/1 var(--f-body);padding:10px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark)}
+.btn.primary:hover{filter:brightness(.96)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.small{padding:7px 10px;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.stack{display:grid;gap:12px;align-content:start}
+.view>*,.grid-2>*,.stack>*,.spar-layout>*,.math>*,.tape-body>*,.moment>*{min-width:0}
+.stack>.seg,.moment>.pill{justify-self:start}
+section.view{scroll-margin-top:90px}
+.note{font-size:13px;color:var(--muted)}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line-strong);border-radius:var(--r)}
+
+/* scoreboard */
+.scoreboard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media (min-width:760px){.scoreboard{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.score{background:var(--surface);padding:14px 16px;display:grid;gap:2px;align-content:start}
+.score .n{font:700 38px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.score .l{font-size:12.5px;color:var(--muted);line-height:1.35}
+.score .n small{font-size:18px;color:var(--muted);margin-left:2px}
+@media (max-width:759px){.score:last-child:nth-child(odd){grid-column:1/-1}}
+
+/* bars */
+.bars{display:grid;gap:9px;align-content:start}
+.barrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(90px,150px) 1fr 34px;gap:10px;align-items:center;font-size:14px;cursor:pointer;border-radius:4px}
+.barrow:hover .barfill{background:var(--bad)}
+.bartrack{height:12px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.barfill{height:100%;background:var(--ink-2);border-radius:3px}
+.barrow .v{font:600 13px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* tape cards */
+.tapes{display:grid;gap:14px}
+.tape{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tape>summary{list-style:none;cursor:pointer;padding:16px 18px;display:grid;gap:10px}
+.tape>summary::-webkit-details-marker{display:none}
+.tape-top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between}
+.tape-title{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.tape-title h3{font-size:24px}
+.tape-meta{color:var(--muted);font-size:13.5px}
+.strip{width:100%;height:46px;display:block}
+.strip .axis{stroke:var(--line-strong);stroke-width:1}
+.strip .tick{fill:var(--muted);font:500 10px var(--f-mono)}
+.strip .m-obj{fill:var(--bad)}
+.strip .m-strong{fill:var(--good)}
+.strip .m-weak{fill:var(--warn)}
+.strip .m-warmer{stroke:var(--good);stroke-width:2.5}
+.strip .m-colder{stroke:var(--bad);stroke-width:2.5}
+.strip .m-price{fill:var(--mark)}
+.strip .m-price-t{fill:var(--on-mark);font:700 10px var(--f-mono)}
+.strip a:hover circle,.strip a:hover rect,.strip a:hover path{opacity:.75}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.tape-body{border-top:1px solid var(--line);padding:18px;display:grid;gap:22px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.moments{display:grid;gap:12px}
+.moment{display:grid;gap:8px;padding:12px 14px;border-radius:8px;background:var(--surface-2)}
+.moment .said{font-size:14.5px}
+.moment .fix{font-size:14px;border-top:1px dashed var(--line-strong);padding-top:8px}
+.moment .fix b{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--mark-ink);margin-right:6px}
+.ts{font:500 12px var(--f-mono);text-decoration:none;color:var(--info);white-space:nowrap}
+.ts::before{content:"\25B6\FE0E ";font-size:9px}
+.stars{font:600 12px var(--f-mono);color:var(--muted)}
+ul.lessons{margin:0;padding-left:20px;display:grid;gap:6px}
+
+.loops{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.loops{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}}
+.loop{display:grid;gap:8px;align-content:start;padding:14px 16px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2)}
+.loop>*{min-width:0}
+.loop .who{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 10px;align-items:baseline}
+.loop .who strong{font:700 21px/1.1 var(--f-display)}
+.loop .script{font-size:14.5px;padding:10px 12px;border-radius:8px;background:var(--surface);border-left:3px solid var(--mark)}
+/* spar */
+.spar-layout{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:980px){.spar-layout{grid-template-columns:320px 1fr}}
+.opps{display:grid;gap:10px;align-content:start}
+.opp{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:4px;padding:12px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface)}
+.opp:hover{border-color:var(--line-strong)}
+.opp[aria-pressed="true"]{border-color:var(--mark);box-shadow:inset 0 0 0 1px var(--mark)}
+.opp .nm{font:700 19px/1.1 var(--f-display)}
+.opp .sub{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.opp .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.arena{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:grid;grid-template-rows:auto 1fr auto;min-height:560px;overflow:hidden}
+.arena-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.clock{font:700 26px/1 var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.meter{display:grid;gap:3px;min-width:170px}
+.meter .track{height:8px;border-radius:4px;background:var(--surface-2);position:relative;overflow:hidden}
+.meter .fill{position:absolute;inset:0 auto 0 0;background:var(--good);border-radius:4px;transition:width .3s}
+.meter .target{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink-2);left:45%}
+.meter .lbl{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.log{padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:62vh;min-height:320px}
+.bubble{max-width:min(620px,88%);padding:10px 14px;border-radius:12px;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble.me{align-self:flex-end;background:var(--ink);color:var(--ground);border-bottom-right-radius:3px}
+.bubble.them{align-self:flex-start;background:var(--surface-2);border-bottom-left-radius:3px}
+.bubble.coach{align-self:center;background:var(--mark-soft);border:1px dashed var(--mark-ink);font-size:14px;max-width:min(680px,96%)}
+.bubble .who{display:block;font:600 11px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:5px}
+.bubble.thinking{color:var(--muted);font-style:italic}
+.composer{border-top:1px solid var(--line);padding:12px;display:grid;gap:10px}
+.composer textarea{width:100%;min-height:62px;max-height:180px;resize:vertical;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font:15px/1.45 var(--f-body);background:var(--ground);color:var(--ink)}
+.brief{padding:18px;display:grid;gap:14px;align-content:start}
+.brief .facts{display:grid;gap:6px;font-size:14px;margin:0;padding-left:18px}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);color:var(--ink-2);font:600 13px var(--f-body);padding:8px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line-strong)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--ground)}
+.debrief{display:grid;gap:18px}
+.grade{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ring{--p:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--mark) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center;flex:none}
+.ring span{width:72px;height:72px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font:700 32px/1 var(--f-display)}
+.dims{display:grid;gap:10px}
+.dim{display:grid;gap:4px}
+.dim .top{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:600}
+.pips{display:flex;gap:3px}
+.pips i{width:22px;height:7px;border-radius:2px;background:var(--surface-2)}
+.pips i.on{background:var(--ink-2)}
+.dim .why{font-size:13.5px;color:var(--ink-2)}
+.history{display:grid;gap:8px}
+.hist{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:14px;cursor:pointer;border:0;text-align:left;color:var(--ink);font-family:var(--f-body)}
+.hist .sc{font:700 22px/1 var(--f-display);min-width:36px;text-align:center}
+.spark{width:100%;height:56px;display:block}
+.spark path.l{fill:none;stroke:var(--ink-2);stroke-width:2}
+.spark path.a{fill:var(--mark-soft)}
+.spark circle{fill:var(--mark);stroke:var(--ink);stroke-width:1.5}
+.spark text{fill:var(--muted);font:500 10px var(--f-mono)}
+
+.gq{font-size:19px;line-height:1.45;font-weight:500}
+.gq .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:var(--muted)}
+.gprog{display:flex;gap:4px;flex-wrap:wrap}
+.gprog i{width:26px;height:6px;border-radius:2px;background:var(--surface-2)}
+.gprog i.done{background:var(--ink-2)}
+.gprog i.now{background:var(--mark)}
+.gscore{font:700 44px/1 var(--f-display)}
+#gauntlet textarea{width:100%;min-height:80px;resize:vertical;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font:15px/1.45 var(--f-body);background:var(--ground);color:var(--ink)}
+/* proof */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:600 13px var(--f-body);padding:7px 11px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.proofcard{display:grid;gap:14px}
+.proofcard .say{font-size:16.5px;line-height:1.5;padding:14px 16px;border-radius:8px;background:var(--mark-soft);border-left:4px solid var(--mark)}
+.proofcard .say b{display:block;font:600 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--mark-ink);margin-bottom:4px}
+.ev-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table.ev{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+table.ev th,table.ev td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.ev th{font:600 12px var(--f-display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+table.ev td.val{font:600 13px var(--f-mono);white-space:nowrap}
+table.ev tr:last-child td{border-bottom:0}
+.copy{appearance:none;border:1px solid var(--line-strong);background:transparent;color:var(--ink-2);font:600 11.5px var(--f-body);padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
+
+.verify{display:grid;gap:4px;padding:14px 16px;border-radius:10px;background:var(--warn-bg);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+.verify strong{color:var(--warn)}
+.chk{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:600 11.5px var(--f-body);padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.chk[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.unv{color:var(--warn);font-weight:600}
+.okv{color:var(--good);font-weight:600}
+/* math */
+.math{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:980px){.math{grid-template-columns:340px 1fr}}
+.form{display:grid;gap:14px;align-content:start}
+.field{display:grid;gap:5px}
+.field label{font-size:13px;font-weight:600;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.field label output{font:600 13px var(--f-mono);color:var(--ink)}
+.field input[type=number],.field select{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;font:15px var(--f-body);background:var(--ground);color:var(--ink);font-variant-numeric:tabular-nums}
+.field input[type=range]{width:100%;accent-color:var(--mark)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.beds{display:flex;flex-wrap:wrap;gap:6px}
+.bed{width:38px;height:28px;border-radius:5px;border:1.5px solid var(--line-strong);position:relative;background:var(--surface)}
+.bed::after{content:"";position:absolute;left:4px;top:4px;width:9px;height:6px;border-radius:2px;background:var(--line)}
+.bed.full{background:var(--ink-2);border-color:var(--ink-2)}
+.bed.full::after{background:var(--surface-2)}
+.bed.new{background:repeating-linear-gradient(135deg,var(--mark) 0 5px,var(--mark-soft) 5px 10px);border-color:var(--mark)}
+.bed.new::after{background:var(--on-mark);opacity:.35}
+.bigline{font:700 44px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.bigline small{font-size:18px;color:var(--muted);font-weight:600;margin-left:4px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (min-width:640px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{display:grid;gap:3px}
+.kpi .n{font:700 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;color:var(--muted);line-height:1.35}
+.funnel{display:grid;gap:8px}
+.frow{display:grid;grid-template-columns:104px 1fr 100px;gap:10px;align-items:center;font-size:14px}
+.frow .ftrack{height:22px;background:var(--surface-2);border-radius:4px;overflow:hidden;position:relative}
+.frow .ffill{position:absolute;inset:0 auto 0 0;background:var(--ink-2);border-radius:4px}
+.frow .fband{position:absolute;top:8px;bottom:8px;background:var(--mark);opacity:.9;border-radius:2px}
+.frow .v{font:600 12.5px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.oneliner{font-size:17px;line-height:1.5;padding:16px 18px;border-radius:10px;background:var(--mark-soft);border-left:4px solid var(--mark)}
+.risk{display:grid;gap:10px}
+.dist{width:100%;height:120px;display:block}
+.dist rect.b{fill:var(--line-strong)}
+.dist rect.b.hit{fill:var(--good)}
+.dist line.g{stroke:var(--bad);stroke-width:2;stroke-dasharray:4 3}
+.dist text{fill:var(--muted);font:500 10px var(--f-mono)}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;cursor:pointer}
+.toggle input{accent-color:var(--mark);width:16px;height:16px}
+details.more>summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="brand"><b>Surven</b><span>Film Room</span></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="t-tape" aria-controls="tape" data-view="tape">Tape<small id="c-tape"></small></button>
+      <button class="tab" role="tab" id="t-spar" aria-controls="spar" data-view="spar">Spar</button>
+      <button class="tab" role="tab" id="t-proof" aria-controls="proof" data-view="proof">Proof<small id="c-proof"></small></button>
+      <button class="tab" role="tab" id="t-math" aria-controls="math" data-view="math">Math</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- TAPE -->
+  <section class="view" id="tape" role="tabpanel" aria-labelledby="t-tape">
+    <div class="stack">
+      <div class="eyebrow" id="tape-eyebrow">Game film</div>
+      <h2 id="tape-title">Every sales call, broken down</h2>
+      <p class="lede" id="tape-lede"></p>
+    </div>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="panel stack" id="loops-panel" hidden>
+      <div class="section-head"><h3>Open loops</h3><span class="note">Deals still in play, and the next move on each.</span></div>
+      <div class="loops" id="loops"></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel stack">
+        <div class="section-head"><h3>Where calls go sideways</h3><span class="note">Objections raised, by type. Tap one to open its proof card.</span></div>
+        <div class="bars" id="objbars"></div>
+      </div>
+      <div class="panel stack" id="patterns-panel">
+        <div class="section-head"><h3>Patterns across the tape</h3></div>
+        <ul class="lessons" id="patterns"></ul>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="section-head"><h3>The calls</h3>
+        <div class="legend"><span><i style="background:var(--bad)"></i>objection</span><span><i style="background:var(--good)"></i>strong moment</span><span><i style="background:var(--warn)"></i>weak moment</span><span><i style="background:var(--mark)"></i>price said</span><span>&#9650; warmer &#9660; colder</span></div>
+      </div>
+      <div class="tapes" id="tapes"></div>
+    </div>
+    <div class="grid-2" id="corner-row"></div>
+  </section>
+
+  <!-- SPAR -->
+  <section class="view" id="spar" role="tabpanel" aria-labelledby="t-spar" hidden>
+    <div class="stack">
+      <div class="eyebrow">Sparring</div>
+      <h2>Take the call again. It pushes back.</h2>
+      <p class="lede">Each opponent is built from a real call on the tape: how they talk, what they worry about, and what they only tell you if you ask the right question. Run the call, then get graded against your own playbook. Short on time? Run the gauntlet: real objections from your calls, one at a time, graded as you go.</p>
+      <div class="seg" role="group" aria-label="Practice mode" id="modeseg"><button id="mode-call" aria-pressed="true">Full call</button><button id="mode-gauntlet" aria-pressed="false">Objection gauntlet</button></div>
+    </div>
+    <div class="panel stack" id="gauntlet" hidden></div>
+    <div class="spar-layout" id="spar-layout">
+      <div class="opps" id="opps"></div>
+      <div class="stack">
+        <div class="arena" id="arena">
+          <div class="arena-head">
+            <div class="stack" style="gap:2px">
+              <span class="eyebrow" id="arena-eyebrow">Opponent</span>
+              <strong id="arena-name" style="font:700 22px/1.1 var(--f-display)">Pick someone to spar with</strong>
+            </div>
+            <div class="row" style="gap:18px">
+              <div class="meter" title="Share of words you have spoken. Aim to stay under the line.">
+                <div class="lbl"><span>Your talk share</span><span id="talk-pct" class="mono">0%</span></div>
+                <div class="track"><div class="fill" id="talk-fill" style="width:0%"></div><div class="target"></div></div>
+              </div>
+              <div class="clock" id="clock" aria-label="Call time">0:00</div>
+            </div>
+          </div>
+          <div id="arena-body" class="brief"></div>
+          <div class="composer" id="composer" hidden>
+            <label for="say" class="note">You say (Enter sends, Shift+Enter for a new line, [brackets] for actions like [shares screen])</label>
+            <textarea id="say" placeholder="Hey, thanks for jumping on. Before I show you anything, what made you take this call?"></textarea>
+            <div class="row" style="justify-content:space-between">
+              <div class="row">
+                <button class="btn primary" id="send">Say it</button>
+                <button class="btn" id="hint" title="Your corner whispers one suggestion">Ask my corner</button>
+                <button class="btn ghost" id="stop" hidden>Stop</button>
+              </div>
+              <div class="row">
+                <label class="toggle"><input type="checkbox" id="tts"> Read replies aloud</label>
+                <button class="btn" id="end">End call and grade me</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel stack" id="history-panel">
+      <div class="section-head"><h3>Your reps</h3><span class="note" id="history-note"></span></div>
+      <svg class="spark" id="spark" viewBox="0 0 600 56" preserveAspectRatio="none" aria-label="Scores over time"></svg>
+      <div class="history" id="history"></div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section class="view" id="proof" role="tabpanel" aria-labelledby="t-proof" hidden>
+    <div class="stack">
+      <div class="eyebrow">Proof book</div>
+      <h2>What they said, and what to say back</h2>
+      <p class="lede" id="proof-lede">Each card pairs the objection as your prospects actually said it with an answer built from your own playbook and numbers you can cite. Every number links to its source.</p>
+    </div>
+    <div class="verify" id="verify-banner" hidden>
+      <strong id="verify-head"></strong>
+      <p id="verify-body"></p>
+    </div>
+    <div class="chips" id="proof-chips" role="group" aria-label="Filter by objection"></div>
+    <div class="stack" id="proofcards"></div>
+    <div class="stack">
+      <div class="section-head"><h3>Evidence library</h3>
+        <div class="row"><label for="ev-topic" class="note">Topic</label>
+          <select id="ev-topic" class="btn small" style="padding:6px 8px"></select></div>
+      </div>
+      <div class="ev-table-wrap"><table class="ev" id="evtable"></table></div>
+      <p class="note" id="ev-gaps"></p>
+    </div>
+  </section>
+
+  <!-- MATH -->
+  <section class="view" id="math" role="tabpanel" aria-labelledby="t-math" hidden>
+    <div class="stack">
+      <div class="eyebrow">Deal math</div>
+      <h2>Their empty beds, in dollars</h2>
+      <p class="lede">Share this screen on a call. Plug in their numbers and it shows what the empty rooms cost, what 90 days is likely to produce, and how fast one move-in pays for it. Ranges come from a simulation, not a promise.</p>
+    </div>
+    <div class="math">
+      <form class="panel form" id="mathform" autocomplete="off">
+        <div class="field"><label for="m-preset">Start from</label><select id="m-preset"></select></div>
+        <div class="two">
+          <div class="field"><label for="m-beds">Licensed beds</label><input type="number" id="m-beds" min="1" max="200" step="1"></div>
+          <div class="field"><label for="m-filled">Filled now</label><input type="number" id="m-filled" min="0" max="200" step="1"></div>
+        </div>
+        <div class="field"><label for="m-rate">Monthly rate per resident <output id="o-rate"></output></label><input type="range" id="m-rate" min="1500" max="15000" step="100"></div>
+        <div class="field"><label for="m-spend">Ad spend per day <output id="o-spend"></output></label><input type="range" id="m-spend" min="20" max="300" step="5"></div>
+        <div class="field"><label for="m-scen">Market scenario</label><select id="m-scen"></select></div>
+        <div class="field"><label for="m-offer">Deal structure</label><select id="m-offer"></select></div>
+        <div class="field"><label for="m-guar">Guarantee (qualified tours in 90 days) <output id="o-guar"></output></label><input type="range" id="m-guar" min="0" max="30" step="1"></div>
+        <label class="toggle"><input type="checkbox" id="m-inside"> Show my side (profit and guarantee risk)</label>
+        <details class="more"><summary>Scenario rates</summary>
+          <div class="stack" style="margin-top:10px">
+            <div class="two">
+              <div class="field"><label for="m-cpl">Cost per lead $</label><input type="number" id="m-cpl" min="1" step="1"></div>
+              <div class="field"><label for="m-book">Lead to booked %</label><input type="number" id="m-book" min="0" max="100" step="0.5"></div>
+              <div class="field"><label for="m-show">Booked to shown %</label><input type="number" id="m-show" min="0" max="100" step="0.5"></div>
+              <div class="field"><label for="m-close">Shown to move-in %</label><input type="number" id="m-close" min="0" max="100" step="0.5"></div>
+            </div>
+            <p class="note" id="m-src"></p>
+          </div>
+        </details>
+      </form>
+      <div class="stack">
+        <div class="panel stack">
+          <div class="section-head"><h3>The house right now</h3><span class="note" id="bed-note"></span></div>
+          <div class="beds" id="beds" aria-label="Beds"></div>
+          <div class="kpis" id="kpis-empty"></div>
+        </div>
+        <div class="panel stack">
+          <div class="section-head"><h3>90 days of ads</h3><span class="note">Bar = expected. Yellow = middle 80% of 2,000 simulated runs.</span></div>
+          <div class="funnel" id="funnel"></div>
+          <div class="kpis" id="kpis-deal"></div>
+        </div>
+        <div class="oneliner" id="oneliner"></div>
+        <div class="row"><button class="btn small" id="copy-oneliner" type="button">Copy the line</button><span class="note" id="copy-note"></span></div>
+        <div class="panel stack" id="inside" hidden>
+          <div class="section-head"><h3>My side of the deal</h3><span class="note">Not for screen share.</span></div>
+          <div class="kpis" id="kpis-inside"></div>
+          <div class="risk">
+            <strong id="risk-head"></strong>
+            <svg class="dist" id="dist" viewBox="0 0 600 120" preserveAspectRatio="none" aria-label="Distribution of shown tours"></svg>
+            <p class="note" id="risk-note"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="application/json" id="data">/*__DATA__*/</script>
+<script>
+(function(){
+"use strict";
+const RAW = document.getElementById("data").textContent;
+let D;
+try { D = JSON.parse(RAW); } catch (e) { D = {}; }
+D.calls = Array.isArray(D.calls) ? D.calls : [];
+D.personas_extra = Array.isArray(D.personas_extra) ? D.personas_extra : [];
+D.evidence = D.evidence && Array.isArray(D.evidence.items) ? D.evidence : {items: [], gaps: []};
+D.playbook = D.playbook || {};
+D.proof = Array.isArray(D.proof) ? D.proof : [];
+D.patterns = Array.isArray(D.patterns) ? D.patterns : [];
+D.model = D.model || {};
+D.meta = D.meta || {};
+
+/* ---------- tiny helpers ---------- */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+function h(tag, attrs) {
+  const el = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k === "style") el.setAttribute("style", v);
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (let i = 2; i < arguments.length; i++) add(el, arguments[i]);
+  return el;
+}
+function add(el, c) {
+  if (c == null || c === false) return;
+  if (Array.isArray(c)) { c.forEach(x => add(el, x)); return; }
+  el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function s(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const k in attrs || {}) if (attrs[k] != null) el.setAttribute(k, attrs[k]);
+  for (let i = 2; i < arguments.length; i++) { const c = arguments[i]; if (c != null) el.append(c instanceof Node ? c : document.createTextNode(String(c))); }
+  return el;
+}
+const money = n => (n < 0 ? "-$" : "$") + Math.round(Math.abs(n)).toLocaleString("en-US");
+const money1k = n => Math.abs(n) >= 10000 ? (n < 0 ? "-$" : "$") + (Math.abs(n) / 1000).toFixed(Math.abs(n) >= 100000 ? 0 : 1).replace(/\.0$/, "") + "k" : money(n);
+const pct = x => Math.round(x * 100) + "%";
+const arr = x => Array.isArray(x) ? x : (x ? [x] : []);
+const str = x => x == null ? "" : String(x);
+function tsSeconds(url) { const m = /timestamp=([\d.]+)/.exec(str(url)); return m ? parseFloat(m[1]) : null; }
+function fmtClock(sec) { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec / 60), r = sec % 60; return m + ":" + String(r).padStart(2, "0"); }
+function tsLink(url, minuteFallback) {
+  const sec = tsSeconds(url);
+  const label = sec != null ? fmtClock(sec) : (minuteFallback != null ? fmtClock(minuteFallback * 60) : "");
+  if (!url) return label ? h("span", {class: "ts"}, label) : null;
+  return h("a", {class: "ts", href: url, target: "_blank", rel: "noopener", title: "Open this moment in Fathom"}, label || "Fathom");
+}
+function linkify(text) {
+  const out = []; const re = /https:\/\/fathom\.video\/[^\s)"]+/g; let last = 0, m;
+  text = str(text);
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const sec = tsSeconds(m[0]);
+    out.push(h("a", {class: "ts", href: m[0], target: "_blank", rel: "noopener"}, sec != null ? fmtClock(sec) : "Fathom"));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+async function copyText(text, note) {
+  try { await navigator.clipboard.writeText(text); if (note) { note.textContent = "Copied."; setTimeout(() => note.textContent = "", 1800); } }
+  catch (e) { if (note) note.textContent = "Copy is blocked here. Select the text and copy it."; }
+}
+const CAT_LABEL = {price: "Price", proof: "Proof", trust: "Trust", timing: "Timing", authority: "Other deciders", fit: "Fit", risk: "Risk", capacity: "Capacity", other: "Other"};
+const catLabel = c => CAT_LABEL[c] || (c ? c[0].toUpperCase() + c.slice(1) : "Other");
+const OUTCOME = o => {
+  o = str(o).toLowerCase();
+  if (o.includes("closed") || o.includes("signed")) return ["Signed", "good"];
+  if (o.includes("pending") || o.includes("follow")) return ["Follow-up", "info"];
+  if (o.includes("stall")) return ["Stalled", "warn"];
+  if (o.includes("disq")) return ["Not a fit", "plain"];
+  if (o.includes("lost")) return ["Lost", "bad"];
+  return [o || "Unknown", "plain"];
+};
+const salesCalls = () => D.calls.filter(c => (c.kind || "sales") === "sales");
+
+/* ---------- routing ---------- */
+const VIEWS = ["tape", "spar", "proof", "math"];
+function show(view, focusId) {
+  if (!VIEWS.includes(view)) view = "tape";
+  VIEWS.forEach(v => { $("#" + v).hidden = v !== view; $("#t-" + v).setAttribute("aria-selected", v === view ? "true" : "false"); });
+  store("fr.view", view);
+  if (focusId) { const el = document.getElementById(focusId); if (el) { el.scrollIntoView({behavior: "smooth", block: "start"}); } }
+  else window.scrollTo({top: 0});
+}
+$$(".tab").forEach(b => b.addEventListener("click", () => { show(b.dataset.view); try { history.replaceState(null, "", "#" + b.dataset.view); } catch (e) {} }));
+
+/* ================= TAPE ================= */
+function median(a) { a = a.filter(x => typeof x === "number" && isFinite(x)).sort((x, y) => x - y); if (!a.length) return null; const m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+function avg(a) { a = a.filter(x => typeof x === "number" && isFinite(x)); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : null; }
+
+function renderTape() {
+  const calls = salesCalls().slice().sort((a, b) => str(b.date).localeCompare(str(a.date)));
+  $("#c-tape").textContent = calls.length ? calls.length : "";
+  if (D.meta.tape_lede) $("#tape-lede").textContent = D.meta.tape_lede;
+  const signed = calls.filter(c => OUTCOME(c.outcome)[0] === "Signed").length;
+  const talk = avg(calls.map(c => c.metrics && c.metrics.joey_talk_share_pct));
+  const openQ = avg(calls.map(c => c.metrics && c.metrics.open_discovery_questions));
+  const priceMin = median(calls.map(c => c.metrics && c.metrics.minute_price_first_said).filter(x => x > 0));
+  const nObj = calls.reduce((n, c) => n + arr(c.persona && c.persona.objections).length, 0);
+  const sb = $("#scoreboard"); sb.textContent = "";
+  const tiles = [
+    [calls.length, "", "sales calls on tape"],
+    [signed, "/" + calls.length, "signed"],
+    [talk != null ? Math.round(talk) : "–", talk != null ? "%" : "", "your average talk share (aim for under 45%)"],
+    [openQ != null ? openQ.toFixed(1) : "–", "", "open discovery questions per call"],
+    [priceMin != null ? Math.round(priceMin) : "–", priceMin != null ? " min" : "", "median minute the price first comes up"]
+  ];
+  tiles.forEach(t => sb.append(h("div", {class: "score"}, h("div", {class: "n"}, t[0], t[1] ? h("small", null, t[1]) : null), h("div", {class: "l"}, t[2]))));
+  if (!calls.length) sb.after(h("div", {class: "empty"}, "No calls loaded yet."));
+
+  // open loops
+  const loops = arr(D.meta.open_loops);
+  $("#loops-panel").hidden = !loops.length;
+  const lb = $("#loops"); lb.textContent = "";
+  loops.forEach(l => {
+    const note = h("span", {class: "note"});
+    lb.append(h("div", {class: "loop"},
+      h("div", {class: "who"}, h("strong", null, l.who), h("span", {class: "pill " + (l.tone || "info")}, l.status || "")),
+      l.where_it_stands ? h("p", null, l.where_it_stands) : null,
+      l.next_move ? h("p", null, h("strong", null, "Next move: "), l.next_move) : null,
+      l.script ? h("div", {class: "script"}, l.script) : null,
+      h("div", {class: "row"}, l.script ? h("button", {class: "copy", onclick: () => copyText(l.script, note)}, "Copy script") : null, note,
+        l.call_id ? h("button", {class: "btn small ghost", onclick: () => { const d = document.getElementById("call-" + l.call_id); if (d) { d.open = true; d.scrollIntoView({behavior: "smooth"}); } }}, "See the call") : null,
+        l.persona_call_id ? h("button", {class: "btn small ghost", onclick: () => { pickOpponent("call-" + l.persona_call_id, l.spar_context); show("spar"); }}, "Rehearse the follow-up") : null)));
+  });
+
+  // objection bars
+  const counts = {};
+  calls.forEach(c => arr(c.persona && c.persona.objections).forEach(o => { const k = o.category || "other"; counts[k] = (counts[k] || 0) + 1; }));
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const max = entries.length ? entries[0][1] : 1;
+  const bars = $("#objbars"); bars.textContent = "";
+  entries.forEach(([k, n]) => {
+    const row = h("button", {class: "barrow", onclick: () => { proofFilter = D.proof.some(c => c.category === k) ? k : null; renderProof(); show("proof", "proofcards"); }, title: "Open the " + catLabel(k) + " proof card"},
+      h("span", null, catLabel(k)), h("span", {class: "bartrack"}, h("span", {class: "barfill", style: "display:block;width:" + (n / max * 100) + "%"})), h("span", {class: "v"}, n));
+    bars.append(row);
+  });
+  if (!entries.length) bars.append(h("p", {class: "note"}, "No objections logged."));
+  if (nObj) bars.append(h("p", {class: "note"}, nObj + " objections across " + calls.length + " calls."));
+
+  // patterns
+  const pl = $("#patterns"); pl.textContent = "";
+  if (D.patterns.length) D.patterns.forEach(p => pl.append(h("li", null, typeof p === "string" ? p : [h("strong", null, p.title + (/[.!?]$/.test(p.title) ? " " : ". ")), p.detail])));
+  else $("#patterns-panel").hidden = true;
+
+  // call cards
+  const box = $("#tapes"); box.textContent = "";
+  calls.forEach(c => box.append(tapeCard(c)));
+
+  // corner notes (coaching) + scouting report (benchmark)
+  const corner = $("#corner-row"); corner.textContent = "";
+  D.calls.filter(c => c.kind === "coaching").forEach(c => corner.append(coachingCard(c)));
+  D.calls.filter(c => c.kind === "benchmark").forEach(c => corner.append(benchmarkCard(c)));
+}
+
+function stripSVG(c, big) {
+  const dur = Math.max(5, c.duration_min || 0) * 60;
+  const W = 1000, H = big ? 52 : 46, y = H / 2 + (big ? 2 : 0);
+  const svg = s("svg", {class: "strip", viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none", role: "img", "aria-label": "Call timeline"});
+  const X = sec => 8 + Math.min(1, Math.max(0, sec / dur)) * (W - 16);
+  svg.append(s("line", {class: "axis", x1: 8, x2: W - 8, y1: y, y2: y}));
+  const step = dur > 3000 ? 600 : 300;
+  for (let t = 0; t <= dur; t += step) {
+    svg.append(s("line", {class: "axis", x1: X(t), x2: X(t), y1: y - 3, y2: y + 3}));
+    if (big) svg.append(s("text", {class: "tick", x: X(t), y: H - 1, "text-anchor": t === 0 ? "start" : "middle"}, Math.round(t / 60) + "m"));
+  }
+  const link = (url, title, node) => { const a = s("a", {href: url || null, target: "_blank"}); a.append(s("title", null, title)); a.append(node); return url ? a : (node.append(s("title", null, title)), node); };
+  const m = c.metrics || {};
+  if (m.minute_price_first_said > 0) {
+    const x = X(m.minute_price_first_said * 60);
+    const g = s("g"); g.append(s("rect", {class: "m-price", x: x - 7, y: y - 20, width: 14, height: 13, rx: 2}), s("text", {class: "m-price-t", x: x, y: y - 10, "text-anchor": "middle"}, "$"));
+    g.append(s("line", {x1: x, x2: x, y1: y - 7, y2: y, stroke: "var(--mark)", "stroke-width": 2}));
+    svg.append(link(null, "Price first said at " + m.minute_price_first_said + " min", g));
+  }
+  arr(c.turning_points).forEach(tp => {
+    const sec = tsSeconds(tp.ts_url) ?? (tp.minute != null ? tp.minute * 60 : null); if (sec == null) return;
+    const x = X(sec), up = tp.direction === "warmer";
+    const p = s("path", {class: up ? "m-warmer" : "m-colder", d: up ? `M${x - 5} ${y + 16} L${x} ${y + 8} L${x + 5} ${y + 16}` : `M${x - 5} ${y + 9} L${x} ${y + 17} L${x + 5} ${y + 9}`, fill: "none"});
+    svg.append(link(tp.ts_url, (up ? "Warmer: " : "Colder: ") + str(tp.what), p));
+  });
+  const P = c.persona || {}, J = c.joey_moments || {};
+  arr(J.strong).forEach(mo => { const sec = tsSeconds(mo.ts_url); if (sec == null) return; svg.append(link(mo.ts_url, "Strong: " + str(mo.why), s("circle", {class: "m-strong", cx: X(sec), cy: y, r: 6}))); });
+  arr(J.weak).forEach(mo => { const sec = tsSeconds(mo.ts_url); if (sec == null) return; svg.append(link(mo.ts_url, "Weak: " + str(mo.why), s("circle", {class: "m-weak", cx: X(sec), cy: y, r: 6}))); });
+  arr(P.objections).forEach(o => {
+    const sec = tsSeconds(o.ts_url) ?? (o.minute != null ? o.minute * 60 : null); if (sec == null) return;
+    const x = X(sec);
+    svg.append(link(o.ts_url, catLabel(o.category) + " objection: " + str(o.objection), s("rect", {class: "m-obj", x: x - 3, y: y - 12, width: 6, height: 24, rx: 1.5})));
+  });
+  return svg;
+}
+
+function tapeCard(c) {
+  const P = c.persona || {}, pr = c.prospect || {}, J = c.joey_moments || {}, m = c.metrics || {};
+  const [oLabel, oTone] = OUTCOME(c.outcome);
+  const d = h("details", {class: "tape", id: "call-" + c.call_id});
+  const meta = [pr.business, pr.location, pr.beds ? pr.beds + " beds" : null, c.duration_min ? c.duration_min + " min" : null].filter(Boolean).join(" · ");
+  d.append(h("summary", null,
+    h("div", {class: "tape-top"},
+      h("div", {class: "tape-title"}, h("h3", null, pr.first_name || c.title), h("span", {class: "tape-meta"}, meta)),
+      h("div", {class: "row", style: "gap:8px"}, h("span", {class: "mono muted"}, c.date || ""), h("span", {class: "pill " + oTone}, oLabel))),
+    stripSVG(c, false)));
+  const body = h("div", {class: "tape-body"});
+  body.append(h("div", {class: "grid-2"},
+    h("div", {class: "stack"},
+      h("p", null, pr.situation || ""),
+      h("dl", {class: "kv"},
+        pr.care_type ? [h("dt", null, "Care"), h("dd", null, pr.care_type)] : null,
+        pr.monthly_rate ? [h("dt", null, "Rate"), h("dd", null, pr.monthly_rate)] : null,
+        pr.occupancy_now ? [h("dt", null, "Occupancy"), h("dd", null, pr.occupancy_now)] : null,
+        pr.payer_mix ? [h("dt", null, "Payers"), h("dd", null, pr.payer_mix)] : null,
+        c.offer_pitched ? [h("dt", null, "You pitched"), h("dd", null, c.offer_pitched)] : null,
+        P.decision_process ? [h("dt", null, "Decision"), h("dd", null, P.decision_process)] : null)),
+    h("div", {class: "stack"},
+      h("div", {class: "eyebrow"}, "How it ended"),
+      h("p", null, c.outcome_detail || ""),
+      h("div", {class: "row", style: "gap:14px"},
+        m.joey_talk_share_pct != null ? h("span", {class: "pill plain"}, "You talked " + m.joey_talk_share_pct + "%") : null,
+        m.open_discovery_questions != null ? h("span", {class: "pill plain"}, m.open_discovery_questions + " open questions") : null,
+        m.longest_joey_monologue_sec ? h("span", {class: "pill plain"}, "Longest monologue " + fmtClock(m.longest_joey_monologue_sec)) : null),
+      stripSVG(c, true),
+      h("div", {class: "row"},
+        h("button", {class: "btn primary small", onclick: () => { pickOpponent(personaIdFor(c)); show("spar"); }}, "Spar with " + (pr.first_name || "them")),
+        h("a", {class: "btn small", href: c.fathom_url, target: "_blank", rel: "noopener"}, "Open in Fathom")))));
+  // why yes
+  if (arr(c.why_he_said_yes).length) {
+    body.append(h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Why they said yes"),
+      h("div", {class: "moments"}, arr(c.why_he_said_yes).map(w => typeof w === "string" ? h("div", {class: "moment"}, h("div", null, linkify(w))) :
+        h("div", {class: "moment"}, h("div", {class: "said"}, h("strong", null, w.reason || w.point || ""), " "), w.quote ? h("blockquote", null, "“" + w.quote + "”", h("span", {class: "who"}, tsLink(w.ts_url))) : null)))));
+  }
+  // objections
+  if (arr(P.objections).length) {
+    body.append(h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Objections, and what you said back"),
+      h("div", {class: "moments"}, arr(P.objections).map(o => h("div", {class: "moment"},
+        h("div", {class: "row", style: "justify-content:space-between"}, h("strong", null, o.objection), h("span", {class: "row", style: "gap:8px"}, h("span", {class: "pill bad"}, catLabel(o.category)), tsLink(o.ts_url, o.minute))),
+        o.quote ? h("blockquote", null, "“" + o.quote + "”", h("span", {class: "who"}, pr.first_name || "Prospect")) : null,
+        o.joey_response_quote ? h("blockquote", null, "“" + o.joey_response_quote + "”", h("span", {class: "who"}, "You · ", h("span", {class: "stars"}, "rated " + (o.response_rating || "?") + "/5"))) : null,
+        o.better_response ? h("div", {class: "fix"}, h("b", null, "Try"), o.better_response) : null)))));
+  }
+  const momentList = (list, tone) => arr(list).map(mo => h("div", {class: "moment"},
+    h("div", {class: "row", style: "justify-content:space-between"}, h("span", {class: "pill " + tone}, tone === "good" ? "Strong" : "Weak"), tsLink(mo.ts_url)),
+    mo.quote ? h("div", {class: "said"}, "“" + mo.quote + "”") : null,
+    h("div", {class: "note", style: "color:var(--ink-2)"}, mo.why || ""),
+    mo.better_line ? h("div", {class: "fix"}, h("b", null, "Try"), mo.better_line) : null));
+  if (arr(J.strong).length || arr(J.weak).length) body.append(h("div", {class: "grid-2"}, h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Keep doing"), h("div", {class: "moments"}, momentList(J.strong, "good"))), h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Fix"), h("div", {class: "moments"}, momentList(J.weak, "warn")))));
+  if (arr(c.lessons).length) body.append(h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Lessons from this call"), h("ul", {class: "lessons"}, arr(c.lessons).map(l => h("li", null, l)))));
+  d.append(body);
+  return d;
+}
+
+function coachingCard(c) {
+  const pts = arr(c.coaching_points);
+  return h("div", {class: "panel stack"},
+    h("div", {class: "section-head"}, h("h3", null, "Corner notes: " + (c.title || "coaching")), h("span", {class: "mono muted"}, c.date || "")),
+    h("div", {class: "moments"}, pts.map(p => h("div", {class: "moment"},
+      h("div", {class: "row", style: "justify-content:space-between"}, h("strong", null, p.point), tsLink(p.ts_url)),
+      p.quote ? h("blockquote", null, "“" + p.quote + "”") : null,
+      p.action ? h("div", {class: "fix"}, h("b", null, "Do"), p.action) : null))),
+    arr(c.lessons).length ? h("ul", {class: "lessons"}, arr(c.lessons).map(l => h("li", null, l))) : null);
+}
+function benchmarkCard(c) {
+  const J = c.joey_moments || {};
+  return h("div", {class: "panel stack"},
+    h("div", {class: "section-head"}, h("h3", null, "Scouting report: " + (c.title || "another pitch")), h("span", {class: "mono muted"}, c.date || "")),
+    h("p", null, c.outcome_detail || (c.prospect && c.prospect.situation) || ""),
+    h("div", {class: "eyebrow"}, "What they did well"),
+    h("div", {class: "moments"}, arr(J.strong).map(mo => h("div", {class: "moment"}, mo.quote ? h("div", {class: "said"}, "“" + mo.quote + "”") : null, h("div", {class: "note", style: "color:var(--ink-2)"}, mo.why || ""), h("div", null, tsLink(mo.ts_url))))),
+    arr(J.weak).length ? [h("div", {class: "eyebrow"}, "Where they slipped"), h("div", {class: "moments"}, arr(J.weak).map(mo => h("div", {class: "moment"}, mo.quote ? h("div", {class: "said"}, "“" + mo.quote + "”") : null, h("div", {class: "note", style: "color:var(--ink-2)"}, mo.why || ""), h("div", null, tsLink(mo.ts_url)))))] : null,
+    arr(c.lessons).length ? h("ul", {class: "lessons"}, arr(c.lessons).map(l => h("li", null, l))) : null,
+    h("div", {class: "row"}, h("a", {class: "btn small", href: c.fathom_url, target: "_blank", rel: "noopener"}, "Open in Fathom")));
+}
+
+/* ================= SPAR ================= */
+function personaIdFor(c) { return "call-" + c.call_id; }
+function buildPersonas() {
+  const list = [];
+  D.personas_extra.forEach(p => list.push(Object.assign({source: "composite"}, p)));
+  D.calls.filter(c => (c.kind || "sales") === "sales" && c.persona && !c.no_spar).forEach(c => {
+    const pr = c.prospect || {};
+    list.push({
+      id: personaIdFor(c), source: "call", call: c,
+      name: pr.first_name || c.title, business: pr.business, location: pr.location, beds: pr.beds, care_type: pr.care_type,
+      rate: pr.monthly_rate, occupancy: pr.occupancy_now, situation: pr.situation, persona: c.persona,
+      outcome: c.outcome, date: c.date,
+      context: c.spar_context || "They booked a call with you about filling their empty beds. This is the first real conversation."
+    });
+  });
+  return list;
+}
+let PERSONAS = [];
+let current = null;          // selected persona
+let difficulty = store("fr.diff") || "real";
+let spar = null;             // live session state
+let sample = null, db = null;
+
+function renderOpps() {
+  const box = $("#opps"); box.textContent = "";
+  box.append(h("div", {class: "eyebrow"}, "Opponents"));
+  PERSONAS.forEach(p => {
+    const objs = arr(p.persona && p.persona.objections).map(o => catLabel(o.category));
+    const uniq = [...new Set(objs)].slice(0, 3);
+    box.append(h("button", {class: "opp", "aria-pressed": current && current.id === p.id ? "true" : "false", onclick: () => pickOpponent(p.id)},
+      h("span", {class: "nm"}, p.name),
+      h("span", {class: "sub"}, [p.business, p.location].filter(Boolean).join(" · ")),
+      h("span", {class: "tags"}, p.source === "composite" ? h("span", {class: "pill info"}, "Composite") : h("span", {class: "pill plain"}, "From your " + (p.date || "") + " call"), uniq.map(u => h("span", {class: "pill bad"}, u)))));
+  });
+}
+function pickOpponent(id, followup) {
+  if (spar && spar.active && !spar.ended) { if (!confirmInline("You're mid-call. Switch opponents and drop this call?", () => { spar = null; pickOpponent(id, followup); })) return; }
+  setMode("call");
+  const base = PERSONAS.find(p => p.id === id) || PERSONAS[0] || null;
+  current = base && followup ? Object.assign({}, base, {context: followup, followup}) : base;
+  spar = null;
+  renderOpps();
+  renderBrief();
+}
+function confirmInline(msg, yes) {
+  const body = $("#arena-body");
+  const bar = h("div", {class: "moment", style: "margin:12px 18px"}, h("p", null, msg), h("div", {class: "row"}, h("button", {class: "btn small primary", onclick: () => { bar.remove(); yes(); }}, "Yes, switch"), h("button", {class: "btn small", onclick: () => bar.remove()}, "Keep going")));
+  body.prepend(bar);
+  return false;
+}
+function renderBrief() {
+  const body = $("#arena-body"); body.className = "brief"; body.textContent = "";
+  $("#composer").hidden = true;
+  setClock(0); setTalk(0);
+  if (!current) { $("#arena-name").textContent = "Pick someone to spar with"; return; }
+  const p = current, P = p.persona || {};
+  $("#arena-eyebrow").textContent = p.source === "composite" ? "Composite opponent" : "Rebuilt from your call";
+  $("#arena-name").textContent = p.name + (p.business ? " · " + p.business : "");
+  add(body, [
+    h("p", {class: "lede", style: "font-size:15px"}, p.context || ""),
+    p.about ? h("p", {class: "note"}, p.about) : null,
+    h("dl", {class: "kv"},
+      p.location ? [h("dt", null, "Where"), h("dd", null, p.location)] : null,
+      p.beds ? [h("dt", null, "Beds"), h("dd", null, p.beds)] : null,
+      p.care_type ? [h("dt", null, "Care"), h("dd", null, p.care_type)] : null,
+      p.rate ? [h("dt", null, "Rate"), h("dd", null, p.rate)] : null,
+      p.occupancy ? [h("dt", null, "Occupancy"), h("dd", null, p.occupancy)] : null),
+    h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "What you know going in"), h("ul", {class: "facts"}, arr(P.known_facts).slice(0, 6).map(f => h("li", null, f)))),
+    h("p", {class: "note"}, arr(P.hidden_facts).length + " more things are true about " + p.name + " that come out only if you ask the right questions. The grade counts how many you find."),
+    h("div", {class: "row"}, h("span", {class: "note"}, "Difficulty"), segDifficulty()),
+    h("div", {class: "row"}, h("button", {class: "btn primary", id: "start", onclick: startSpar}, "Start the call"), h("span", {class: "note", id: "spar-avail"}, sample ? "" : "Sparring runs on Claude inside the page. Open this in Claude to use it."))]);
+  const btn = $("#start"); if (btn && !sample) btn.disabled = true;
+}
+function segDifficulty() {
+  const opts = [["warm", "Warm"], ["real", "Like the real call"], ["brutal", "Brutal"]];
+  const seg = h("div", {class: "seg", role: "group", "aria-label": "Difficulty"});
+  opts.forEach(([k, l]) => seg.append(h("button", {"aria-pressed": difficulty === k ? "true" : "false", onclick: e => { difficulty = k; store("fr.diff", k); $$("button", seg).forEach(b => b.setAttribute("aria-pressed", "false")); e.currentTarget.setAttribute("aria-pressed", "true"); }}, l)));
+  return seg;
+}
+const DIFF_TEXT = {
+  warm: "You are somewhat open and friendly today. Raise your main objections, but let good answers land.",
+  real: "Behave exactly like you did on the real call: same level of skepticism, same concerns, same pace.",
+  brutal: "You are busy, distracted and skeptical. Interrupt long answers, push hard on your objections twice, and threaten to end the call if Joey pitches before understanding your situation. Only a genuinely strong call earns a next step."
+};
+function offerSummary() {
+  if (D.meta.offer_brief) return D.meta.offer_brief;
+  const o = D.playbook.current_offer || {};
+  const parts = [o.name, o.promise, arr(o.components).join("; "), o.guarantee, o.ad_spend].filter(Boolean);
+  return parts.join(" | ").slice(0, 1500);
+}
+function personaSheet(p, includeHidden) {
+  const P = p.persona || {};
+  const lines = [];
+  lines.push("NAME: " + p.name + (p.business ? " (" + p.business + ")" : "") + (p.location ? ", " + p.location : ""));
+  if (p.situation) lines.push("SITUATION: " + p.situation);
+  if (p.followup) lines.push("WHERE THINGS STAND (this is a FOLLOW-UP call, you have already talked to Joey before): " + p.followup);
+  [["Beds", p.beds], ["Care", p.care_type], ["Rate", p.rate], ["Occupancy", p.occupancy]].forEach(([k, v]) => { if (v) lines.push(k.toUpperCase() + ": " + v); });
+  if (P.temperament) lines.push("TEMPERAMENT: " + P.temperament);
+  if (arr(P.speech_patterns).length) lines.push("THINGS YOU ACTUALLY SAY (use this voice): " + arr(P.speech_patterns).map(x => "\"" + x + "\"").join(" / "));
+  if (P.opening_move) lines.push("HOW YOU OPEN: " + P.opening_move);
+  if (arr(P.known_facts).length) lines.push("FACTS YOU SHARE FREELY:\n- " + arr(P.known_facts).join("\n- "));
+  if (includeHidden && arr(P.hidden_facts).length) lines.push("FACTS YOU ONLY REVEAL IF JOEY ASKS A GOOD, SPECIFIC QUESTION THAT GETS AT THEM:\n- " + arr(P.hidden_facts).join("\n- "));
+  if (arr(P.pains).length) lines.push("YOUR PAINS:\n- " + arr(P.pains).join("\n- "));
+  if (arr(P.objections).length) lines.push("OBJECTIONS YOU RAISE WHEN THEY BECOME RELEVANT (in your own words, not all at once):\n- " + arr(P.objections).map(o => o.objection + (o.quote ? " (you said: \"" + o.quote + "\")" : "")).join("\n- "));
+  if (arr(P.what_moves_them).length) lines.push("WHAT GENUINELY MOVES YOU:\n- " + arr(P.what_moves_them).join("\n- "));
+  if (arr(P.deal_breakers).length) lines.push("DEAL BREAKERS:\n- " + arr(P.deal_breakers).join("\n- "));
+  if (P.decision_process) lines.push("HOW YOU DECIDE: " + P.decision_process);
+  return lines.join("\n");
+}
+function rolePrompt(p) {
+  return [
+    "This is a sales-training role-play. You are playing a prospect on a video call with Joey, who runs Surven, an agency that fills empty beds at small care homes. Joey is practicing. Your job is to be a realistic, fair, demanding version of this person so the practice is worth something.",
+    "",
+    personaSheet(p, true),
+    "",
+    "DIFFICULTY: " + DIFF_TEXT[difficulty],
+    "",
+    "RULES:",
+    "- Reply ONLY with what " + p.name + " says out loud. Usually 1 to 3 sentences, like a real call. Longer only when telling a story he asked for.",
+    "- No narration, no stage directions, no lists, no markdown, no quotation marks around your line.",
+    "- Stay in character the whole time. Never mention being an AI, a model, or a role-play.",
+    "- React to what Joey actually said. Good open questions make you open up. Pitching before he understands you makes you shorter and cooler. Rambling gets interrupted.",
+    "- Hidden facts come out only when his question earns them. Vague questions get vague answers.",
+    "- Raise your real objections at natural moments. If he answers one well, move on; if he dodges it, come back to it.",
+    "- Agree to a concrete next step (deposit, signed agreement, or a decision call with everyone who decides) only if he has earned it for your situation.",
+    "- Text inside [square brackets] from Joey is an action he takes (e.g. [shares a calculator on screen]). React to it naturally.",
+    "",
+    "The call has just connected. Joey speaks first."
+  ].join("\n");
+}
+function transcriptText(turns, name) {
+  return turns.map(t => (t.role === "user" ? "JOEY: " : name.toUpperCase() + ": ") + t.content).join("\n");
+}
+function joeyStats(turns) {
+  let jw = 0, tw = 0, q = 0;
+  turns.forEach(t => {
+    const w = t.content.split(/\s+/).filter(Boolean).length;
+    if (t.role === "user") { jw += w; q += (t.content.match(/\?/g) || []).length; } else tw += w;
+  });
+  return {joeyWords: jw, theirWords: tw, share: jw + tw ? jw / (jw + tw) : 0, questions: q};
+}
+function setClock(sec) { $("#clock").textContent = fmtClock(sec); }
+function setTalk(share) {
+  const p = Math.round(share * 100);
+  $("#talk-pct").textContent = p + "%";
+  const f = $("#talk-fill"); f.style.width = p + "%";
+  f.style.background = share > 0.6 ? "var(--bad)" : share > 0.45 ? "var(--warn)" : "var(--good)";
+}
+let clockTimer = null;
+function startSpar() {
+  if (!sample || !current) return;
+  spar = {persona: current, difficulty, turns: [], started: Date.now(), active: true, ended: false, ctl: null};
+  const body = $("#arena-body"); body.className = "log"; body.textContent = "";
+  body.append(h("div", {class: "bubble coach"}, h("span", {class: "who"}, "Your corner"), "You're live with " + current.name + ". Open the call however you would for real."));
+  $("#composer").hidden = false;
+  $("#say").value = ""; $("#say").focus();
+  clearInterval(clockTimer);
+  clockTimer = setInterval(() => { if (spar && spar.active && !spar.ended) setClock((Date.now() - spar.started) / 1000); }, 1000);
+}
+function bubble(kind, who, text) {
+  const b = h("div", {class: "bubble " + kind}, h("span", {class: "who"}, who));
+  const t = h("span", null, text); b.append(t);
+  $("#arena-body").append(b); b.scrollIntoView({block: "end", behavior: "smooth"});
+  return t;
+}
+function errCopy(e) {
+  const c = e && e.code;
+  if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") return "Claude isn't available to this page for you, so sparring is off.";
+  if (c === "rate_limited") return "Too many requests right now. Wait a minute, then try again.";
+  if (c === "session_expired") return "Your Claude session expired. Sign in again, then retry.";
+  if (c === "refused") return "Claude declined that one. Rephrase and try again.";
+  if (c === "prompt_too_large") return "This call has gotten too long to continue. End it and get graded.";
+  if (c === "invalid_json") return "The grade came back garbled. Press grade again.";
+  return "The connection dropped. Try again.";
+}
+function busy(on) {
+  $("#send").disabled = on; $("#hint").disabled = on; $("#end").disabled = on; $("#stop").hidden = !on;
+}
+function trimTurns(turns, budget) {
+  // keep the most recent turns under a character budget; must start with a user turn
+  let out = turns.slice(), size = out.reduce((n, t) => n + t.content.length, 0);
+  while (size > budget && out.length > 2) { size -= out[0].content.length; out.shift(); }
+  while (out.length && out[0].role !== "user") out.shift();
+  return out;
+}
+async function sendTurn() {
+  if (!spar || spar.ended) return;
+  const ta = $("#say"); const text = ta.value.trim(); if (!text) return;
+  ta.value = "";
+  spar.turns.push({role: "user", content: text});
+  bubble("me", "You", text);
+  setTalk(joeyStats(spar.turns).share);
+  const out = bubble("them thinking", spar.persona.name, "…");
+  const bub = out.parentElement;
+  busy(true);
+  spar.ctl = new AbortController();
+  try {
+    const input = [{role: "user", content: rolePrompt(spar.persona)}].concat(trimTurns(spar.turns, 40000));
+    const res = await sample(input, {modelTier: "quick", cache: false, signal: spar.ctl.signal, onText: ({text}) => { bub.classList.remove("thinking"); out.textContent = text; }});
+    const reply = res.text.trim().replace(/^"(.*)"$/s, "$1");
+    out.textContent = reply;
+    spar.turns.push({role: "assistant", content: reply});
+    setTalk(joeyStats(spar.turns).share);
+    speak(reply);
+  } catch (e) {
+    bub.classList.remove("thinking");
+    if (e && e.code === "cancelled") { if (e.text) { spar.turns.push({role: "assistant", content: e.text}); out.textContent = e.text; } else { bub.remove(); spar.turns.pop(); ta.value = text; } }
+    else { out.textContent = e && e.text ? e.text : ""; bub.append(h("div", {class: "note"}, errCopy(e))); if (!(e && e.text)) { spar.turns.pop(); ta.value = text; } }
+  } finally { busy(false); ta.focus(); }
+}
+async function askCorner() {
+  if (!spar || spar.ended || !sample) return;
+  const pb = D.playbook;
+  const rules = arr(pb.coach_rubric).map(r => "- " + r.dimension + ": " + r.what_good_looks_like).join("\n");
+  const fw = arr(pb.frameworks).map(f => "- " + f.name + ": " + f.rule).join("\n");
+  const prompt = [
+    "You are Joey's sales coach, sitting in his corner during a live practice call with a care-home prospect. Whisper ONE thing he should do or say next. Max 35 words, plain words, no preamble. If a line helps, give the exact line in quotes.",
+    "His playbook frameworks:\n" + fw,
+    "What good looks like:\n" + rules,
+    "What Joey knows about the prospect:\n" + personaSheet(spar.persona, false).slice(0, 2500),
+    "Call so far:\n" + transcriptText(trimTurns(spar.turns, 12000), spar.persona.name)
+  ].join("\n\n");
+  const out = bubble("coach thinking", "Your corner", "…");
+  const bub = out.parentElement;
+  busy(true);
+  const ctl = spar.ctl = new AbortController();
+  try {
+    const res = await sample(prompt, {modelTier: "quick", cache: false, signal: ctl.signal, onText: ({text}) => { bub.classList.remove("thinking"); out.textContent = text; }});
+    out.textContent = res.text.trim();
+  } catch (e) { bub.classList.remove("thinking"); if (e && e.code === "cancelled") bub.remove(); else out.textContent = errCopy(e); }
+  finally { busy(false); }
+}
+function speak(text) {
+  if (!$("#tts").checked || !("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.03; speechSynthesis.speak(u); } catch (e) {}
+}
+async function endSpar() {
+  if (!spar || spar.ended) return;
+  if (spar.turns.filter(t => t.role === "user").length < 2) {
+    bubble("coach", "Your corner", "Say at least a few things before you ask for a grade.");
+    return;
+  }
+  spar.ended = true; spar.active = false; clearInterval(clockTimer);
+  const dur = Math.round((Date.now() - spar.started) / 1000);
+  const st = joeyStats(spar.turns);
+  $("#composer").hidden = true;
+  const wait = bubble("coach thinking", "Your corner", "Watching the tape back and grading you against your playbook. This takes up to a minute.");
+  const pb = D.playbook;
+  const rubric = arr(pb.coach_rubric).length ? arr(pb.coach_rubric) : [{dimension: "Discovery", what_good_looks_like: "Asks open questions and learns their situation before pitching", weight: 3}];
+  const prompt = [
+    "You are grading a sales practice call for Joey, who runs Surven (fills empty beds at small care homes). Grade him against HIS OWN playbook and rubric below. Be specific and honest; quote his exact words from the transcript as evidence. Write fixes in Joey's plain voice (short sentences, no jargon).",
+    "RUBRIC (dimension, what good looks like, red flags, weight 1-5):\n" + JSON.stringify(rubric).slice(0, 7000),
+    "FRAMEWORKS HE USES:\n" + arr(pb.frameworks).map(f => "- " + f.name + ": " + f.rule).join("\n").slice(0, 2500),
+    "VOICE RULES:\n" + arr(pb.voice_rules).map(v => "- " + v.rule).join("\n").slice(0, 1500),
+    "THE PROSPECT (including facts that were hidden from Joey; use this to judge what he uncovered):\n" + personaSheet(spar.persona, true).slice(0, 7000),
+    "WHAT JOEY SELLS:\n" + offerSummary(),
+    "MEASURED: call length " + fmtClock(dur) + ", Joey spoke " + Math.round(st.share * 100) + "% of the words, asked " + st.questions + " questions.",
+    "TRANSCRIPT:\n" + transcriptText(spar.turns, spar.persona.name).slice(-30000),
+    "Reply with ONLY a JSON object of this shape:\n" + JSON.stringify({
+      overall: "0-100 integer",
+      verdict: "one sentence, the headline",
+      would_they_buy: "yes | maybe | no",
+      next_step_secured: "true/false",
+      dimensions: [{name: "rubric dimension", score: "1-5 integer", evidence: "exact quote from Joey or what was missing", fix: "one concrete fix"}],
+      best_moment: {quote: "Joey's exact words", why: "..."},
+      worst_moment: {quote: "Joey's exact words", why: "...", better_line: "what to say instead"},
+      hidden_found: ["hidden facts he uncovered"],
+      hidden_missed: [{fact: "hidden fact he missed", question: "the question that would have unlocked it"}],
+      drill: "one specific drill for the next rep"
+    })
+  ].join("\n\n");
+  spar.ctl = new AbortController();
+  try {
+    const g = await sample.json(prompt, {modelTier: "default", cache: false, signal: spar.ctl.signal});
+    wait.parentElement.remove();
+    const rec = {
+      persona_id: spar.persona.id, persona_name: spar.persona.name, difficulty: spar.difficulty,
+      started_at: new Date(spar.started).toISOString(), ended_at: new Date().toISOString(), duration_sec: dur,
+      talk_share: Math.round(st.share * 100), questions: st.questions,
+      overall: Math.max(0, Math.min(100, parseInt(g.overall, 10) || 0)),
+      grade: g, turns: spar.turns.slice(-80).map(t => ({role: t.role, content: t.content.slice(0, 2000)}))
+    };
+    renderDebrief(rec);
+    saveRep(rec);
+  } catch (e) {
+    wait.textContent = errCopy(e);
+    wait.parentElement.classList.remove("thinking");
+    spar.ended = false; spar.active = true;
+    $("#composer").hidden = false;
+  }
+}
+function renderDebrief(rec) {
+  const g = rec.grade || {};
+  const body = $("#arena-body"); body.className = "brief"; body.textContent = "";
+  $("#composer").hidden = true;
+  setClock(rec.duration_sec || 0); setTalk((rec.talk_share || 0) / 100);
+  const buy = str(g.would_they_buy).toLowerCase();
+  const d = h("div", {class: "debrief"},
+    h("div", {class: "grade"},
+      h("div", {class: "ring", style: "--p:" + rec.overall}, h("span", null, rec.overall)),
+      h("div", {class: "stack", style: "gap:6px;flex:1;min-width:220px"},
+        h("strong", {style: "font-size:17px"}, g.verdict || ""),
+        h("div", {class: "row"},
+          h("span", {class: "pill " + (buy === "yes" ? "good" : buy === "maybe" ? "warn" : "bad")}, "Would they buy: " + (g.would_they_buy || "?")),
+          h("span", {class: "pill " + (String(g.next_step_secured) === "true" ? "good" : "bad")}, String(g.next_step_secured) === "true" ? "Next step secured" : "No next step"),
+          h("span", {class: "pill plain"}, "Talked " + rec.talk_share + "%"),
+          h("span", {class: "pill plain"}, rec.questions + " questions"),
+          h("span", {class: "pill plain"}, rec.persona_name + " · " + rec.difficulty)))),
+    h("div", {class: "dims"}, arr(g.dimensions).map(dm => {
+      const sc = Math.max(0, Math.min(5, parseInt(dm.score, 10) || 0));
+      return h("div", {class: "dim"},
+        h("div", {class: "top"}, h("span", null, dm.name), h("span", {class: "pips", "aria-label": sc + " of 5"}, [1, 2, 3, 4, 5].map(i => h("i", {class: i <= sc ? "on" : ""})))),
+        dm.evidence ? h("div", {class: "why"}, dm.evidence) : null,
+        dm.fix ? h("div", {class: "note"}, "Fix: " + dm.fix) : null);
+    })),
+    h("div", {class: "grid-2"},
+      g.best_moment ? h("div", {class: "moment"}, h("span", {class: "pill good"}, "Best moment"), h("div", {class: "said"}, "“" + str(g.best_moment.quote) + "”"), h("div", {class: "note", style: "color:var(--ink-2)"}, g.best_moment.why || "")) : null,
+      g.worst_moment ? h("div", {class: "moment"}, h("span", {class: "pill warn"}, "Fix this"), h("div", {class: "said"}, "“" + str(g.worst_moment.quote) + "”"), h("div", {class: "note", style: "color:var(--ink-2)"}, g.worst_moment.why || ""), g.worst_moment.better_line ? h("div", {class: "fix"}, h("b", null, "Try"), g.worst_moment.better_line) : null) : null),
+    h("div", {class: "grid-2"},
+      h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Hidden facts you found"), arr(g.hidden_found).length ? h("ul", {class: "lessons"}, arr(g.hidden_found).map(x => h("li", null, x))) : h("p", {class: "note"}, "None this time.")),
+      h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "What you missed"), h("ul", {class: "lessons"}, arr(g.hidden_missed).map(x => h("li", null, typeof x === "string" ? x : [x.fact, x.question ? h("div", {class: "note"}, "Ask: " + x.question) : null]))))),
+    g.drill ? h("div", {class: "oneliner"}, h("strong", null, "Next rep: "), g.drill) : null,
+    h("details", {class: "more"}, h("summary", null, "Read the transcript"), h("div", {class: "stack", style: "margin-top:10px"}, arr(rec.turns).map(t => h("div", {class: "bubble " + (t.role === "user" ? "me" : "them"), style: "max-width:100%"}, h("span", {class: "who"}, t.role === "user" ? "You" : rec.persona_name), t.content)))),
+    h("div", {class: "row"}, h("button", {class: "btn primary", onclick: () => { if (!current || current.id !== rec.persona_id) current = PERSONAS.find(p => p.id === rec.persona_id) || current; spar = null; renderOpps(); renderBrief(); }}, "Run it back"), h("button", {class: "btn", onclick: () => { spar = null; renderBrief(); }}, "Back to brief")));
+  body.append(d);
+  body.scrollIntoView({block: "start", behavior: "smooth"});
+}
+async function saveRep(rec) {
+  if (!db) { $("#history-note").textContent = "This rep wasn't saved. History saves when the page is opened in Claude."; return; }
+  try { await db.collection("spars").add(rec); }
+  catch (e) { $("#history-note").textContent = e && e.code === "quota_exceeded" ? "History is full. Older reps need clearing before new ones save." : "This rep couldn't be saved (" + (e && e.code || "error") + ")."; }
+}
+let REPS = [];
+function renderHistory() {
+  const box = $("#history"); box.textContent = "";
+  const spark = $("#spark"); spark.textContent = "";
+  if (!db) { $("#history-note").textContent = "Your graded reps save here when the page runs inside Claude."; box.append(h("div", {class: "empty"}, "No reps yet.")); return; }
+  if (!REPS.length) { box.append(h("div", {class: "empty"}, "No reps yet. Your first graded call shows up here.")); return; }
+  $("#history-note").textContent = REPS.length + " graded rep" + (REPS.length === 1 ? "" : "s");
+  REPS.forEach(r => box.append(h(r.type === "gauntlet" ? "div" : "button", {class: "hist", onclick: r.type === "gauntlet" ? null : () => { setMode("call"); current = PERSONAS.find(p => p.id === r.persona_id) || current; renderOpps(); renderDebrief(r); $("#arena").scrollIntoView({behavior: "smooth"}); }},
+    h("span", {class: "sc"}, r.overall), h("span", null, h("strong", null, r.persona_name), " · " + r.difficulty + (r.type === "gauntlet" ? "" : " · talked " + r.talk_share + "%"), h("div", {class: "note"}, str(r.grade && r.grade.verdict).slice(0, 140))), h("span", {class: "mono muted"}, str(r.ended_at).slice(0, 10)))));
+  const pts = REPS.slice().reverse().map(r => r.overall);
+  if (pts.length >= 2) {
+    const W = 600, H = 56, X = i => 8 + i * (W - 16) / (pts.length - 1), Y = v => H - 6 - v / 100 * (H - 14);
+    let d = ""; pts.forEach((v, i) => d += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1) + " ");
+    spark.append(s("line", {x1: 0, x2: W, y1: Y(70), y2: Y(70), stroke: "var(--line)", "stroke-dasharray": "3 4"}), s("text", {x: W - 4, y: Y(70) - 3, "text-anchor": "end"}, "70"));
+    spark.append(s("path", {class: "a", d: d + "L" + X(pts.length - 1) + " " + H + " L" + X(0) + " " + H + " Z"}), s("path", {class: "l", d}));
+    spark.append(s("circle", {cx: X(pts.length - 1), cy: Y(pts[pts.length - 1]), r: 4.5}));
+  }
+}
+
+/* ================= GAUNTLET ================= */
+let G = null;
+function setMode(m) {
+  const g = m === "gauntlet";
+  $("#mode-call").setAttribute("aria-pressed", g ? "false" : "true");
+  $("#mode-gauntlet").setAttribute("aria-pressed", g ? "true" : "false");
+  $("#gauntlet").hidden = !g; $("#spar-layout").hidden = g;
+  store("fr.mode", m);
+  if (g && !G) renderGauntletStart();
+}
+function objectionPool() {
+  const pool = [];
+  salesCalls().forEach(c => arr(c.persona && c.persona.objections).forEach(o => { if (o.quote) pool.push({quote: o.quote, who: (c.prospect && c.prospect.first_name) || c.title, category: o.category || "other", label: o.objection, try: o.better_response, ts: o.ts_url, minute: o.minute}); }));
+  D.personas_extra.forEach(p => arr(p.persona && p.persona.objections).forEach(o => { if (o.quote) pool.push({quote: o.quote, who: p.name + " (composite)", category: o.category || "other", label: o.objection, try: o.better_response}); }));
+  return pool;
+}
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function renderGauntletStart() {
+  const box = $("#gauntlet"); box.textContent = "";
+  const pool = objectionPool();
+  box.append(h("div", {class: "section-head"}, h("h3", null, "Objection gauntlet"), h("span", {class: "note"}, pool.length + " real objections in the pool")),
+    h("p", {class: "lede", style: "font-size:15px"}, "Eight objections, pulled from your calls and shuffled. Answer each the way you would on the call. Each answer is scored 1 to 5 on Agree, Answer, Ask again and plain voice, with a stronger line to steal."),
+    h("div", {class: "row"}, h("button", {class: "btn primary", id: "g-start", onclick: () => startGauntlet(pool)}, "Start the gauntlet"), h("span", {class: "note"}, sample ? "" : "The gauntlet runs on Claude inside the page. Open this in Claude to use it.")));
+  if (!sample || !pool.length) $("#g-start").disabled = true;
+}
+function startGauntlet(pool) {
+  G = {items: shuffle(pool).slice(0, 8), i: 0, results: [], started: Date.now()};
+  renderGauntletItem();
+}
+function proofFor(cat) { return D.proof.find(c => c.category === cat); }
+function renderGauntletItem() {
+  const box = $("#gauntlet"); box.textContent = "";
+  const it = G.items[G.i];
+  box.append(h("div", {class: "section-head"}, h("h3", null, "Objection " + (G.i + 1) + " of " + G.items.length), h("div", {class: "gprog"}, G.items.map((_, k) => h("i", {class: k < G.i ? "done" : k === G.i ? "now" : ""})))),
+    h("div", {class: "bubble them gq", style: "max-width:100%"}, "“" + it.quote + "”", h("span", {class: "who"}, it.who + " · " + catLabel(it.category))),
+    h("label", {for: "g-say", class: "note"}, "Your answer, out loud, the way you'd say it"),
+    h("textarea", {id: "g-say", placeholder: "Agree first, answer what's underneath, then ask a question back."}),
+    h("div", {class: "row"}, h("button", {class: "btn primary", id: "g-send", onclick: gradeGauntlet}, "Grade it"), h("button", {class: "btn ghost", onclick: () => { G = null; renderGauntletStart(); }}, "Quit")),
+    h("div", {id: "g-out", class: "stack"}));
+  $("#g-say").focus();
+  $("#g-say").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); gradeGauntlet(); } });
+}
+async function gradeGauntlet() {
+  const it = G.items[G.i];
+  const ans = $("#g-say").value.trim(); if (!ans) return;
+  const btn = $("#g-send"); btn.disabled = true;
+  const out = $("#g-out"); out.textContent = ""; out.append(h("p", {class: "note"}, "Grading…"));
+  const card = proofFor(it.category);
+  const fw = arr(D.playbook.frameworks).map(f => "- " + f.name + ": " + f.rule).join("\n").slice(0, 1800);
+  const vr = arr(D.playbook.voice_rules).map(v => "- " + v.rule + (v.dont ? " (don't: " + (Array.isArray(v.dont) ? v.dont.join(", ") : v.dont) + ")" : "")).join("\n").slice(0, 1500);
+  const prompt = [
+    "Grade one objection answer from Joey, who sells a done-for-you program that fills empty beds at small care homes. Judge it against HIS frameworks and voice rules below. Be direct and specific.",
+    "FRAMEWORKS:\n" + fw, "VOICE RULES:\n" + vr,
+    card ? "HIS PROOF CARD FOR THIS OBJECTION: " + card.say_this : "",
+    "THE OBJECTION (" + catLabel(it.category) + "), from " + it.who + ": \"" + it.quote + "\"",
+    "JOEY'S ANSWER: \"" + ans + "\"",
+    'Reply with ONLY JSON: {"score": 1-5 integer, "agree": true/false (did he agree or defuse first), "answered_underneath": true/false (did he answer the real concern under the words), "asked_again": true/false (did he end with a question that moves the call forward), "worked": "one short sentence", "change": "one short sentence", "stronger_line": "a better answer in Joey\'s plain voice, 1-3 short sentences, ending in a question"}'
+  ].filter(Boolean).join("\n\n");
+  try {
+    const r = await sample.json(prompt, {modelTier: "quick", cache: false});
+    const sc = Math.max(1, Math.min(5, parseInt(r.score, 10) || 1));
+    G.results.push({quote: it.quote, who: it.who, category: it.category, answer: ans, score: sc, grade: r});
+    out.textContent = "";
+    const chk = (ok, l) => h("span", {class: "pill " + (ok === true || ok === "true" ? "good" : "bad")}, (ok === true || ok === "true" ? "\u2713 " : "\u2717 ") + l);
+    add(out, [h("div", {class: "grade"}, h("div", {class: "gscore"}, sc + "/5"), h("div", {class: "row"}, chk(r.agree, "Agree"), chk(r.answered_underneath, "Answer underneath"), chk(r.asked_again, "Ask again"))),
+      r.worked ? h("p", null, h("strong", null, "Worked: "), r.worked) : null,
+      r.change ? h("p", null, h("strong", null, "Change: "), r.change) : null,
+      r.stronger_line ? h("div", {class: "oneliner"}, h("strong", null, "Stronger: "), r.stronger_line) : null,
+      it.try ? h("p", {class: "note"}, "From the tape breakdown: " + it.try) : null,
+      h("div", {class: "row"}, h("button", {class: "btn primary", id: "g-next", onclick: nextGauntlet}, G.i + 1 < G.items.length ? "Next objection" : "Finish"))]);
+    $("#g-next").focus();
+  } catch (e) {
+    out.textContent = ""; out.append(h("p", {class: "note"}, errCopy(e))); btn.disabled = false;
+  }
+}
+function nextGauntlet() {
+  G.i++;
+  if (G.i < G.items.length) { renderGauntletItem(); return; }
+  const avgS = G.results.reduce((n, r) => n + r.score, 0) / Math.max(1, G.results.length);
+  const weakest = G.results.slice().sort((a, b) => a.score - b.score)[0];
+  const rec = {type: "gauntlet", persona_id: "gauntlet", persona_name: "Objection gauntlet", difficulty: G.results.length + " objections",
+    started_at: new Date(G.started).toISOString(), ended_at: new Date().toISOString(), duration_sec: Math.round((Date.now() - G.started) / 1000),
+    talk_share: 0, questions: 0, overall: Math.round(avgS * 20),
+    grade: {verdict: "Average " + avgS.toFixed(1) + "/5. Weakest: " + catLabel(weakest && weakest.category) + ".", rounds: G.results.map(r => ({quote: r.quote, answer: r.answer.slice(0, 1500), score: r.score, stronger_line: r.grade && r.grade.stronger_line}))}};
+  saveRep(rec);
+  const box = $("#gauntlet"); box.textContent = "";
+  box.append(h("div", {class: "grade"}, h("div", {class: "ring", style: "--p:" + rec.overall}, h("span", null, avgS.toFixed(1))), h("div", {class: "stack", style: "gap:4px"}, h("strong", {style: "font-size:17px"}, "Gauntlet done. Average " + avgS.toFixed(1) + " out of 5."), h("span", {class: "note"}, db ? "Saved to your reps." : "Not saved: history needs the page open in Claude."))),
+    h("div", {class: "moments"}, G.results.map(r => h("div", {class: "moment"},
+      h("div", {class: "row", style: "justify-content:space-between"}, h("strong", null, "“" + r.quote + "”"), h("span", {class: "pill " + (r.score >= 4 ? "good" : r.score >= 3 ? "warn" : "bad")}, r.score + "/5")),
+      h("div", {class: "said"}, "You: " + r.answer),
+      r.grade && r.grade.stronger_line ? h("div", {class: "fix"}, h("b", null, "Try"), r.grade.stronger_line) : null))),
+    h("div", {class: "row"}, h("button", {class: "btn primary", onclick: () => startGauntlet(objectionPool())}, "Run it again"), h("button", {class: "btn", onclick: () => { G = null; setMode("call"); }}, "Back to full calls")));
+  G = null;
+}
+
+/* ================= PROOF ================= */
+let proofFilter = null;
+let CHECKS = {};            // evidence id -> {ok, at}
+let checksWritable = true;
+function isChecked(e) { return !!(CHECKS[e.id] && CHECKS[e.id].ok) || e.verified === true; }
+async function toggleCheck(e, btn) {
+  if (!db) return;
+  const next = Object.assign({}, CHECKS);
+  if (next[e.id] && next[e.id].ok) delete next[e.id]; else next[e.id] = {ok: true, at: new Date().toISOString()};
+  btn.disabled = true;
+  try { await db.doc("checks/evidence").set({items: next}); CHECKS = next; }
+  catch (err) { checksWritable = false; }
+  finally { btn.disabled = false; renderProof(); }
+}
+function verifyBanner() {
+  const items = D.evidence.items; const n = items.length;
+  const checked = items.filter(isChecked).length;
+  const b = $("#verify-banner"); b.hidden = !n || checked === n;
+  if (b.hidden) return;
+  $("#verify-head").textContent = checked ? checked + " of " + n + " numbers checked. Check the rest before you use them." : "None of these numbers has been checked against its source yet.";
+  $("#verify-body").textContent = D.meta.verify_note || "They were found through search results; the source pages couldn't be opened while this was built. Open the source, confirm the number, then tick \u201cI checked it\u201d. Until then, treat each one as a lead, not a fact. Your own rule: provable numbers only.";
+}
+function renderProof() {
+  const cards = D.proof;
+  $("#c-proof").textContent = cards.length ? cards.length : "";
+  verifyBanner();
+  const chips = $("#proof-chips"); chips.textContent = "";
+  const cats = cards.map(c => c.category);
+  [null].concat(cats).forEach(k => chips.append(h("button", {class: "chip", "aria-pressed": proofFilter === k ? "true" : "false", onclick: () => { proofFilter = k; renderProof(); }}, k ? catLabel(k) : "All")));
+  const box = $("#proofcards"); box.textContent = "";
+  const evById = {}; D.evidence.items.forEach(e => evById[e.id] = e);
+  cards.filter(c => !proofFilter || c.category === proofFilter).forEach(c => {
+    const quotes = [];
+    salesCalls().forEach(call => arr(call.persona && call.persona.objections).forEach(o => { if ((o.category || "other") === c.category && o.quote) quotes.push({q: o.quote, who: (call.prospect && call.prospect.first_name) || call.title, ts: o.ts_url, m: o.minute}); }));
+    const ev = arr(c.evidence_ids).map(id => evById[id]).filter(Boolean);
+    box.append(h("article", {class: "panel proofcard", id: "proof-" + c.category},
+      h("div", {class: "section-head"}, h("h3", null, c.title), h("span", {class: "pill bad"}, catLabel(c.category) + " · heard " + quotes.length + "×")),
+      c.what_is_really_going_on ? h("p", {class: "lede", style: "font-size:15px"}, c.what_is_really_going_on) : null,
+      quotes.length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "How they said it"), quotes.slice(0, 4).map(q => h("blockquote", null, "“" + q.q + "”", h("span", {class: "who"}, q.who + " · ", tsLink(q.ts, q.m))))) : null,
+      h("div", {class: "say"}, h("b", null, "Say this"), c.say_this),
+      arr(c.then_ask).length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Then ask"), h("ul", {class: "lessons"}, arr(c.then_ask).map(x => h("li", null, x)))) : null,
+      ev.length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Numbers you can cite"), h("ul", {class: "lessons"}, ev.map(e => h("li", null, e.say_it_like_this || e.claim, " ", e.url ? h("a", {href: e.url, target: "_blank", rel: "noopener", class: "note"}, "(" + (e.publisher || e.source_title || "source") + (e.date ? ", " + e.date : "") + ")") : h("span", {class: "note"}, "(" + (e.publisher || "calculation") + ")"), " ", isChecked(e) ? h("span", {class: "note okv"}, "\u2713 checked") : h("span", {class: "note unv"}, "unchecked"), e.confidence && e.confidence !== "high" ? h("span", {class: "note"}, " · " + e.confidence + " confidence") : null)))) : null,
+      arr(c.avoid).length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Don't"), h("ul", {class: "lessons"}, arr(c.avoid).map(x => h("li", null, x)))) : null,
+      c.source_note ? h("p", {class: "note"}, c.source_note) : null,
+      h("div", {class: "row"}, h("button", {class: "btn small", onclick: () => { const p = PERSONAS.find(pp => arr(pp.persona && pp.persona.objections).some(o => o.category === c.category)); if (p) { pickOpponent(p.id); show("spar"); } }}, "Practice this objection"))));
+  });
+  if (!cards.length) box.append(h("div", {class: "empty"}, "No proof cards loaded."));
+  // evidence table
+  const topics = [...new Set(D.evidence.items.map(e => e.topic).filter(Boolean))];
+  const sel = $("#ev-topic");
+  if (!sel.options.length) { sel.append(h("option", {value: ""}, "All topics")); topics.forEach(t => sel.append(h("option", {value: t}, t))); sel.addEventListener("change", renderEvidence); }
+  renderEvidence();
+  $("#ev-gaps").textContent = arr(D.evidence.gaps).length ? "Couldn't find solid data for: " + arr(D.evidence.gaps).join("; ") : "";
+}
+function renderEvidence() {
+  const t = $("#ev-topic").value;
+  const tb = $("#evtable"); tb.textContent = "";
+  tb.append(h("thead", null, h("tr", null, h("th", null, "Topic"), h("th", null, "Number"), h("th", null, "Claim"), h("th", null, "Say it like this"), h("th", null, "Source"), h("th", null, "Checked"))));
+  const body = h("tbody");
+  D.evidence.items.filter(e => !t || e.topic === t).forEach(e => {
+    const note = h("span", {class: "note"});
+    body.append(h("tr", null,
+      h("td", null, h("span", {class: "pill plain"}, e.topic || "")),
+      h("td", {class: "val"}, e.value || ""),
+      h("td", null, e.claim || "", e.caveat ? h("div", {class: "note"}, e.caveat) : null),
+      h("td", null, e.say_it_like_this || "", " ", h("button", {class: "copy", onclick: () => copyText(e.say_it_like_this || e.claim, note)}, "Copy"), " ", note),
+      h("td", null, e.url ? h("a", {href: e.url, target: "_blank", rel: "noopener"}, e.publisher || e.source_title || "link") : h("span", null, e.publisher || "calculation"), h("div", {class: "note"}, [e.date, e.confidence ? e.confidence + " confidence" : null].filter(Boolean).join(" · "))),
+      h("td", null, db && checksWritable ? (() => { const b = h("button", {class: "chk", "aria-pressed": isChecked(e) ? "true" : "false", title: "Tick after you've opened the source and confirmed the number"}, isChecked(e) ? "\u2713 Checked" : "I checked it"); b.addEventListener("click", () => toggleCheck(e, b)); return b; })() : h("span", {class: isChecked(e) ? "okv" : "unv"}, isChecked(e) ? "\u2713" : "No"))));
+  });
+  tb.append(body);
+}
+
+/* ================= MATH ================= */
+const M = D.model;
+const SCEN = arr(M.scenarios);
+const OFFERS = arr(M.offers);
+const PRESETS = arr(M.presets);
+function mv(id) { return parseFloat($("#" + id).value) || 0; }
+function initMath() {
+  const ps = $("#m-preset"); PRESETS.forEach((p, i) => ps.append(h("option", {value: i}, p.label)));
+  const sc = $("#m-scen"); SCEN.forEach((p, i) => sc.append(h("option", {value: i}, p.label)));
+  sc.append(h("option", {value: "custom"}, "Custom rates"));
+  const of = $("#m-offer"); OFFERS.forEach((o, i) => of.append(h("option", {value: i}, o.label)));
+  const saved = (() => { try { return JSON.parse(store("fr.math") || "null"); } catch (e) { return null; } })();
+  applyPreset(saved && saved.preset != null ? saved.preset : 0, saved);
+  ps.addEventListener("change", () => applyPreset(parseInt(ps.value, 10)));
+  sc.addEventListener("change", () => { if (sc.value !== "custom") setRates(SCEN[parseInt(sc.value, 10)]); computeMath(); });
+  ["m-cpl", "m-book", "m-show", "m-close"].forEach(id => $("#" + id).addEventListener("input", () => { $("#m-scen").value = "custom"; computeMath(); }));
+  $("#mathform").addEventListener("input", e => { if (!["m-preset", "m-scen", "m-cpl", "m-book", "m-show", "m-close"].includes(e.target.id)) computeMath(); });
+  $("#mathform").addEventListener("submit", e => e.preventDefault());
+  $("#m-inside").addEventListener("change", computeMath);
+  $("#copy-oneliner").addEventListener("click", () => copyText($("#oneliner").textContent, $("#copy-note")));
+}
+function setRates(sc) { if (!sc) return; $("#m-cpl").value = sc.cpl; $("#m-book").value = +(sc.book * 100).toFixed(1); $("#m-show").value = +(sc.show * 100).toFixed(1); $("#m-close").value = +(sc.close * 100).toFixed(1); $("#m-src").textContent = sc.source || ""; }
+function applyPreset(i, saved) {
+  const p = PRESETS[i] || PRESETS[0] || {beds: 6, filled: 3, rate: 5500, spend: 50, scenario: 0, offer: 0, guarantee: 10};
+  const v = saved || p;
+  $("#m-preset").value = i;
+  $("#m-beds").value = v.beds; $("#m-filled").value = v.filled; $("#m-rate").value = v.rate; $("#m-spend").value = v.spend;
+  $("#m-scen").value = v.scenario != null ? v.scenario : 0; $("#m-offer").value = v.offer != null ? v.offer : 0; $("#m-guar").value = v.guarantee != null ? v.guarantee : 10;
+  if (saved && saved.scenario === "custom") { $("#m-cpl").value = saved.cpl; $("#m-book").value = saved.book; $("#m-show").value = saved.show; $("#m-close").value = saved.close; }
+  else setRates(SCEN[parseInt($("#m-scen").value, 10)] || SCEN[0]);
+  if (saved && saved.inside) $("#m-inside").checked = true;
+  $("#bed-note").textContent = p.note || "";
+  computeMath();
+}
+function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+function binom(n, p, R) { let k = 0; if (n < 60) { for (let i = 0; i < n; i++) if (R() < p) k++; return k; } const mu = n * p, sd = Math.sqrt(n * p * (1 - p)); const z = Math.sqrt(-2 * Math.log(R() || 1e-9)) * Math.cos(2 * Math.PI * R()); return Math.max(0, Math.min(n, Math.round(mu + sd * z))); }
+function poisson(l, R) { if (l > 60) { const z = Math.sqrt(-2 * Math.log(R() || 1e-9)) * Math.cos(2 * Math.PI * R()); return Math.max(0, Math.round(l + Math.sqrt(l) * z)); } let L = Math.exp(-l), k = 0, p = 1; do { k++; p *= R(); } while (p > L); return k - 1; }
+function simulate(spend, cpl, book, showR, close, cap, n) {
+  const R = rng(20260927); const out = {leads: [], booked: [], shown: [], moves: []};
+  for (let i = 0; i < n; i++) {
+    const z = Math.sqrt(-2 * Math.log(R() || 1e-9)) * Math.cos(2 * Math.PI * R());
+    const cplI = cpl * Math.exp(0.25 * z - 0.03125); // market noise on lead cost
+    const leads = poisson(spend / cplI, R), bk = binom(leads, book, R), sh = binom(bk, showR, R), mv_ = Math.min(cap, binom(sh, close, R));
+    out.leads.push(leads); out.booked.push(bk); out.shown.push(sh); out.moves.push(mv_);
+  }
+  return out;
+}
+const q = (a, p) => { const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.max(0, Math.floor(p * (b.length - 1))))]; };
+function computeMath() {
+  const beds = Math.max(1, Math.round(mv("m-beds"))), filled = Math.min(beds, Math.max(0, Math.round(mv("m-filled"))));
+  $("#m-filled").max = beds;
+  const rate = mv("m-rate"), perDay = mv("m-spend"), guar = Math.round(mv("m-guar"));
+  const days = M.program_days || 90, daysPerMonth = M.days_per_month || 30.4;
+  const months3 = days / 30, spend = perDay * daysPerMonth * months3;
+  const cpl = Math.max(1, mv("m-cpl")), book = mv("m-book") / 100, showR = mv("m-show") / 100, close = mv("m-close") / 100;
+  $("#o-rate").textContent = money(rate) + "/mo"; $("#o-spend").textContent = money(perDay) + " · " + money(spend) + " total"; $("#o-guar").textContent = guar;
+  const empty = beds - filled;
+  // beds board
+  const eLeads = spend / cpl, eBooked = eLeads * book, eShown = eBooked * showR, eMoves = Math.min(empty, eShown * close);
+  const S = simulate(spend, cpl, book, showR, close, empty, 2000);
+  const band = k => [q(S[k], 0.1), q(S[k], 0.9)];
+  const bedsEl = $("#beds"); bedsEl.textContent = "";
+  const proj = Math.round(eMoves);
+  for (let i = 0; i < beds; i++) bedsEl.append(h("span", {class: "bed " + (i < filled ? "full" : i < filled + proj ? "new" : ""), title: i < filled ? "Filled" : i < filled + proj ? "Expected move-in in 90 days" : "Empty"}));
+  const emptyMonth = empty * rate, emptyDay = emptyMonth / daysPerMonth;
+  const kE = $("#kpis-empty"); kE.textContent = "";
+  [[money(emptyDay), "lost per day with " + empty + " empty " + (empty === 1 ? "bed" : "beds")], [money1k(emptyMonth), "lost per month"], [money1k(emptyMonth * months3), "lost over the next " + days + " days"], [money1k(emptyMonth * 12), "lost per year if nothing changes"]]
+    .forEach(([n, l]) => kE.append(h("div", {class: "kpi"}, h("div", {class: "n"}, n), h("div", {class: "l"}, l))));
+  // funnel
+  const fn = $("#funnel"); fn.textContent = "";
+  const rows = [["Leads", eLeads, band("leads")], ["Tours booked", eBooked, band("booked")], ["Tours shown", eShown, band("shown")], ["Move-ins", eMoves, band("moves")]];
+  const fmax = Math.max(1, band("leads")[1], eLeads);
+  rows.forEach(([l, v, b]) => fn.append(h("div", {class: "frow"}, h("span", null, l),
+    h("span", {class: "ftrack"}, h("span", {class: "ffill", style: "width:" + (v / fmax * 100).toFixed(1) + "%"}), h("span", {class: "fband", style: "left:" + (b[0] / fmax * 100).toFixed(1) + "%;width:" + Math.max(0.6, (b[1] - b[0]) / fmax * 100).toFixed(1) + "%"})),
+    h("span", {class: "v"}, (v < 10 ? v.toFixed(1) : Math.round(v)) + (b ? " (" + b[0] + "–" + b[1] + ")" : "")))));
+  // offer economics
+  const oi = parseInt($("#m-offer").value, 10) || 0; const O = OFFERS[oi] || {kind: "flat", fee: 6000, owner_pays_ads: true, label: "Flat fee"};
+  const cardFee = M.card_fee || 0.03, phone = (M.phone_per_month || 50) * months3;
+  const perShownAds = eShown > 0 ? spend / eShown : spend;
+  function economics(shown, moves) {
+    let ownerFee = 0, ownerAds = 0, survenAds = 0;
+    if (O.kind === "flat") { ownerFee = O.fee; ownerAds = spend; }
+    else if (O.kind === "per_move") { ownerFee = (O.fee || 0) + O.per_move * Math.min(moves, O.max_moves || moves); ownerAds = O.owner_pays_ads === false ? 0 : spend; survenAds = O.owner_pays_ads === false ? spend : 0; }
+    else if (O.kind === "hybrid") { ownerFee = O.fee + O.per_tour * shown; ownerAds = spend; }
+    else if (O.kind === "per_tour") { ownerFee = O.fee + O.per_tour * shown; survenAds = spend; }
+    else if (O.kind === "try_first") { const firstCost = shown >= 1 ? Math.min(spend, spend / Math.max(shown, 1)) : spend; survenAds = firstCost; ownerFee = shown >= 1 ? O.fee : 0; ownerAds = spend - firstCost; }
+    const surven = ownerFee * (1 - cardFee) - phone - survenAds;
+    return {ownerFee, ownerAds, ownerAll: ownerFee + ownerAds, surven};
+  }
+  const E = economics(eShown, eMoves);
+  const months = M.value_months || 12;
+  const valuePerMove = rate * months;
+  const payback = E.ownerAll / rate;
+  const kD = $("#kpis-deal"); kD.textContent = "";
+  [[money1k(E.ownerAll), "their all-in cost for " + days + " days (" + (O.owner_pays_ads === false ? "ads on you" : "fee + ads") + ")"],
+   [eShown > 0 ? money(E.ownerAll / eShown) : "–", "their cost per shown tour"],
+   [payback.toFixed(1) + " mo", "of one resident's rent pays for all of it"],
+   [money1k(eMoves * valuePerMove), "first-" + months + "-month revenue from expected move-ins"]]
+    .forEach(([n, l]) => kD.append(h("div", {class: "kpi"}, h("div", {class: "n"}, n), h("div", {class: "l"}, l))));
+  const line = empty > 0
+    ? "You have " + empty + " empty " + (empty === 1 ? "bed" : "beds") + " at " + money(rate) + " a month. That's " + money(emptyDay) + " a day, " + money(emptyMonth) + " a month, that isn't coming in. The whole " + days + " days" + (O.owner_pays_ads === false ? "" : ", ads included,") + " is about " + money(E.ownerAll) + ". One family moving in covers that in " + payback.toFixed(1) + " months, and every month after that is yours."
+    : "Every bed is full right now. The question is how fast you refill the next one. At " + money(rate) + " a month, each empty week costs about " + money(rate / daysPerMonth * 7) + ".";
+  $("#oneliner").textContent = line;
+  // inside view
+  const inside = $("#m-inside").checked; $("#inside").hidden = !inside;
+  if (inside) {
+    const sv = S.shown.map((sh, k) => economics(sh, S.moves[k]).surven);
+    const hit = S.shown.filter(x => x >= guar).length / S.shown.length;
+    const kI = $("#kpis-inside"); kI.textContent = "";
+    [[money1k(E.surven), "your expected profit (after card fees + phone)"], [q(sv, 0.1) === q(sv, 0.9) ? money1k(q(sv, 0.1)) : money1k(q(sv, 0.1)) + " to " + money1k(q(sv, 0.9)), q(sv, 0.1) === q(sv, 0.9) ? "your profit in every simulated run" : "your profit range (middle 80%)"], [money(perShownAds), "ad cost per shown tour"], [pct(hit), "chance of hitting " + guar + " shown tours"]]
+      .forEach(([n, l]) => kI.append(h("div", {class: "kpi"}, h("div", {class: "n", style: "font-size:" + (n.length > 12 ? "22px" : "30px")}, n), h("div", {class: "l"}, l))));
+    $("#risk-head").textContent = hit >= 0.8 ? "The guarantee is safe in this scenario." : hit >= 0.5 ? "The guarantee is a coin flip or better, but not safe." : "The guarantee fails more often than not in this scenario.";
+    $("#risk-note").textContent = "Shown tours across 2,000 simulated " + days + "-day runs. Green bars meet the guarantee of " + guar + ". Lead cost varies ±25% run to run; each step is a random draw at the rates on the left.";
+    drawDist(S.shown, guar);
+  }
+  try { store("fr.math", JSON.stringify({preset: parseInt($("#m-preset").value, 10), beds, filled, rate, spend: perDay, scenario: $("#m-scen").value === "custom" ? "custom" : parseInt($("#m-scen").value, 10), offer: oi, guarantee: guar, cpl: mv("m-cpl"), book: mv("m-book"), show: mv("m-show"), close: mv("m-close"), inside})); } catch (e) {}
+}
+function drawDist(a, g) {
+  const svg = $("#dist"); svg.textContent = "";
+  const max = Math.max(g + 2, q(a, 0.995) + 1), bins = new Array(max + 1).fill(0);
+  a.forEach(x => bins[Math.min(max, x)]++);
+  const W = 600, H = 120, pad = 16, bw = (W - 2 * pad) / bins.length, top = Math.max(...bins);
+  bins.forEach((n, i) => { const hh = n / top * (H - 30); svg.append(s("rect", {class: "b" + (i >= g ? " hit" : ""), x: pad + i * bw + 1, y: H - 16 - hh, width: Math.max(1, bw - 2), height: hh})); });
+  const gx = pad + g * bw;
+  svg.append(s("line", {class: "g", x1: gx, x2: gx, y1: 4, y2: H - 16}), s("text", {x: gx + 4, y: 12}, "guarantee " + g));
+  const step = max > 40 ? 10 : 5;
+  for (let i = 0; i <= max; i += step) svg.append(s("text", {x: pad + i * bw + bw / 2, y: H - 3, "text-anchor": "middle"}, i));
+}
+
+/* ================= BOOT ================= */
+PERSONAS = buildPersonas();
+current = PERSONAS[0] || null;
+renderTape(); renderOpps(); renderBrief(); renderProof(); initMath(); renderHistory();
+$("#mode-call").addEventListener("click", () => setMode("call"));
+$("#mode-gauntlet").addEventListener("click", () => setMode("gauntlet"));
+$("#send").addEventListener("click", sendTurn);
+$("#hint").addEventListener("click", askCorner);
+$("#end").addEventListener("click", endSpar);
+$("#stop").addEventListener("click", () => spar && spar.ctl && spar.ctl.abort());
+$("#say").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendTurn(); } });
+renderGauntletStart();
+if (store("fr.mode") === "gauntlet") setMode("gauntlet");
+const initial = (location.hash || "").slice(1) || store("fr.view") || "tape";
+show(initial);
+
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("sample").then(fn => { sample = fn || null; if (!spar) renderBrief(); if (!G) renderGauntletStart(); }).catch(() => {});
+  window.claude.use("db").then(d => {
+    db = d || null;
+    if (!db) { renderHistory(); return; }
+    try {
+      db.collection("spars").orderBy("ended_at", "desc").limit(40).onSnapshot(snap => { REPS = snap.docs.map(x => x.data()).filter(Boolean); renderHistory(); }, () => { renderHistory(); });
+      db.doc("checks/evidence").onSnapshot(snap => { CHECKS = (snap.exists && snap.data() && snap.data().items) || {}; renderProof(); }, () => {});
+      renderProof();
+    } catch (e) { renderHistory(); }
+  }).catch(() => {});
+}
+})();
+</script>
