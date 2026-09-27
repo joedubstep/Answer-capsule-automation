@@ -60,6 +60,16 @@ p{margin:0}
 .tab small{font:500 11px var(--f-mono);letter-spacing:0;color:var(--muted);margin-left:4px}
 
 main{padding-block:26px 80px}
+@media (max-width:600px){
+  .brand span{display:none}
+  .bar .wrap{gap:6px 10px;flex-wrap:nowrap}
+  .tabs{gap:0;flex-wrap:nowrap;overflow-x:auto;min-width:0}
+  .tab{padding:8px 6px 7px;font-size:14.5px;letter-spacing:.04em}
+  .brand{font-size:15px;letter-spacing:.1em}
+  .tab small{display:none}
+  .tab[aria-selected="true"]::after{left:6px;right:6px}
+  h2{font-size:26px}
+}
 .view{display:grid;gap:26px}
 .lede{max-width:68ch;color:var(--ink-2);font-size:16px}
 .section-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:8px 20px}
@@ -85,7 +95,10 @@ blockquote .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:v
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .btn.small{padding:7px 10px;font-size:13px}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.stack{display:grid;gap:12px}
+.stack{display:grid;gap:12px;align-content:start}
+.view>*,.grid-2>*,.stack>*,.spar-layout>*,.math>*,.tape-body>*,.moment>*{min-width:0}
+.stack>.seg,.moment>.pill{justify-self:start}
+section.view{scroll-margin-top:90px}
 .note{font-size:13px;color:var(--muted)}
 .empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line-strong);border-radius:var(--r)}
 
@@ -96,9 +109,10 @@ blockquote .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:v
 .score .n{font:700 38px/1 var(--f-display);font-variant-numeric:tabular-nums}
 .score .l{font-size:12.5px;color:var(--muted);line-height:1.35}
 .score .n small{font-size:18px;color:var(--muted);margin-left:2px}
+@media (max-width:759px){.score:last-child:nth-child(odd){grid-column:1/-1}}
 
 /* bars */
-.bars{display:grid;gap:9px}
+.bars{display:grid;gap:9px;align-content:start}
 .barrow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(90px,150px) 1fr 34px;gap:10px;align-items:center;font-size:14px;cursor:pointer;border-radius:4px}
 .barrow:hover .barfill{background:var(--bad)}
 .bartrack{height:12px;border-radius:3px;background:var(--surface-2);overflow:hidden}
@@ -141,10 +155,11 @@ blockquote .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:v
 .stars{font:600 12px var(--f-mono);color:var(--muted)}
 ul.lessons{margin:0;padding-left:20px;display:grid;gap:6px}
 
-.loops{display:grid;gap:12px;grid-template-columns:1fr}
+.loops{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
 @media (min-width:900px){.loops{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}}
 .loop{display:grid;gap:8px;align-content:start;padding:14px 16px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2)}
-.loop .who{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.loop>*{min-width:0}
+.loop .who{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 10px;align-items:baseline}
 .loop .who strong{font:700 21px/1.1 var(--f-display)}
 .loop .script{font-size:14.5px;padding:10px 12px;border-radius:8px;background:var(--surface);border-left:3px solid var(--mark)}
 /* spar */
@@ -155,7 +170,7 @@ ul.lessons{margin:0;padding-left:20px;display:grid;gap:6px}
 .opp:hover{border-color:var(--line-strong)}
 .opp[aria-pressed="true"]{border-color:var(--mark);box-shadow:inset 0 0 0 1px var(--mark)}
 .opp .nm{font:700 19px/1.1 var(--f-display)}
-.opp .sub{font-size:12.5px;color:var(--muted)}
+.opp .sub{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .opp .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .arena{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:grid;grid-template-rows:auto 1fr auto;min-height:560px;overflow:hidden}
 .arena-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
@@ -216,13 +231,19 @@ ul.lessons{margin:0;padding-left:20px;display:grid;gap:6px}
 .proofcard .say{font-size:16.5px;line-height:1.5;padding:14px 16px;border-radius:8px;background:var(--mark-soft);border-left:4px solid var(--mark)}
 .proofcard .say b{display:block;font:600 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--mark-ink);margin-bottom:4px}
 .ev-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
-table.ev{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+table.ev{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
 table.ev th,table.ev td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 table.ev th{font:600 12px var(--f-display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
 table.ev td.val{font:600 13px var(--f-mono);white-space:nowrap}
 table.ev tr:last-child td{border-bottom:0}
 .copy{appearance:none;border:1px solid var(--line-strong);background:transparent;color:var(--ink-2);font:600 11.5px var(--f-body);padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
 
+.verify{display:grid;gap:4px;padding:14px 16px;border-radius:10px;background:var(--warn-bg);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+.verify strong{color:var(--warn)}
+.chk{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:600 11.5px var(--f-body);padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.chk[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.unv{color:var(--warn);font-weight:600}
+.okv{color:var(--good);font-weight:600}
 /* math */
 .math{display:grid;gap:18px;grid-template-columns:1fr}
 @media (min-width:980px){.math{grid-template-columns:340px 1fr}}
@@ -248,11 +269,11 @@ table.ev tr:last-child td{border-bottom:0}
 .kpi .n{font:700 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
 .kpi .l{font-size:12.5px;color:var(--muted);line-height:1.35}
 .funnel{display:grid;gap:8px}
-.frow{display:grid;grid-template-columns:120px 1fr 64px;gap:10px;align-items:center;font-size:14px}
+.frow{display:grid;grid-template-columns:104px 1fr 100px;gap:10px;align-items:center;font-size:14px}
 .frow .ftrack{height:22px;background:var(--surface-2);border-radius:4px;overflow:hidden;position:relative}
 .frow .ffill{position:absolute;inset:0 auto 0 0;background:var(--ink-2);border-radius:4px}
 .frow .fband{position:absolute;top:8px;bottom:8px;background:var(--mark);opacity:.9;border-radius:2px}
-.frow .v{font:600 13px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.frow .v{font:600 12.5px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .oneliner{font-size:17px;line-height:1.5;padding:16px 18px;border-radius:10px;background:var(--mark-soft);border-left:4px solid var(--mark)}
 .risk{display:grid;gap:10px}
 .dist{width:100%;height:120px;display:block}
@@ -368,6 +389,10 @@ details.more>summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--i
       <div class="eyebrow">Proof book</div>
       <h2>What they said, and what to say back</h2>
       <p class="lede" id="proof-lede">Each card pairs the objection as your prospects actually said it with an answer built from your own playbook and numbers you can cite. Every number links to its source.</p>
+    </div>
+    <div class="verify" id="verify-banner" hidden>
+      <strong id="verify-head"></strong>
+      <p id="verify-body"></p>
     </div>
     <div class="chips" id="proof-chips" role="group" aria-label="Filter by objection"></div>
     <div class="stack" id="proofcards"></div>
@@ -498,6 +523,18 @@ function tsLink(url, minuteFallback) {
   if (!url) return label ? h("span", {class: "ts"}, label) : null;
   return h("a", {class: "ts", href: url, target: "_blank", rel: "noopener", title: "Open this moment in Fathom"}, label || "Fathom");
 }
+function linkify(text) {
+  const out = []; const re = /https:\/\/fathom\.video\/[^\s)"]+/g; let last = 0, m;
+  text = str(text);
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const sec = tsSeconds(m[0]);
+    out.push(h("a", {class: "ts", href: m[0], target: "_blank", rel: "noopener"}, sec != null ? fmtClock(sec) : "Fathom"));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 async function copyText(text, note) {
   try { await navigator.clipboard.writeText(text); if (note) { note.textContent = "Copied."; setTimeout(() => note.textContent = "", 1800); } }
@@ -574,7 +611,7 @@ function renderTape() {
   const max = entries.length ? entries[0][1] : 1;
   const bars = $("#objbars"); bars.textContent = "";
   entries.forEach(([k, n]) => {
-    const row = h("button", {class: "barrow", onclick: () => { proofFilter = k; renderProof(); show("proof", "proofcards"); }, title: "Open the " + catLabel(k) + " proof card"},
+    const row = h("button", {class: "barrow", onclick: () => { proofFilter = D.proof.some(c => c.category === k) ? k : null; renderProof(); show("proof", "proofcards"); }, title: "Open the " + catLabel(k) + " proof card"},
       h("span", null, catLabel(k)), h("span", {class: "bartrack"}, h("span", {class: "barfill", style: "display:block;width:" + (n / max * 100) + "%"})), h("span", {class: "v"}, n));
     bars.append(row);
   });
@@ -583,7 +620,7 @@ function renderTape() {
 
   // patterns
   const pl = $("#patterns"); pl.textContent = "";
-  if (D.patterns.length) D.patterns.forEach(p => pl.append(h("li", null, typeof p === "string" ? p : [h("strong", null, p.title + ". "), p.detail])));
+  if (D.patterns.length) D.patterns.forEach(p => pl.append(h("li", null, typeof p === "string" ? p : [h("strong", null, p.title + (/[.!?]$/.test(p.title) ? " " : ". ")), p.detail])));
   else $("#patterns-panel").hidden = true;
 
   // call cards
@@ -666,8 +703,8 @@ function tapeCard(c) {
         h("a", {class: "btn small", href: c.fathom_url, target: "_blank", rel: "noopener"}, "Open in Fathom")))));
   // why yes
   if (arr(c.why_he_said_yes).length) {
-    body.append(h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Why he said yes"),
-      h("div", {class: "moments"}, arr(c.why_he_said_yes).map(w => typeof w === "string" ? h("div", {class: "moment"}, w) :
+    body.append(h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Why they said yes"),
+      h("div", {class: "moments"}, arr(c.why_he_said_yes).map(w => typeof w === "string" ? h("div", {class: "moment"}, h("div", null, linkify(w))) :
         h("div", {class: "moment"}, h("div", {class: "said"}, h("strong", null, w.reason || w.point || ""), " "), w.quote ? h("blockquote", null, "“" + w.quote + "”", h("span", {class: "who"}, tsLink(w.ts_url))) : null)))));
   }
   // objections
@@ -770,7 +807,7 @@ function renderBrief() {
   const p = current, P = p.persona || {};
   $("#arena-eyebrow").textContent = p.source === "composite" ? "Composite opponent" : "Rebuilt from your call";
   $("#arena-name").textContent = p.name + (p.business ? " · " + p.business : "");
-  body.append(
+  add(body, [
     h("p", {class: "lede", style: "font-size:15px"}, p.context || ""),
     p.about ? h("p", {class: "note"}, p.about) : null,
     h("dl", {class: "kv"},
@@ -782,7 +819,7 @@ function renderBrief() {
     h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "What you know going in"), h("ul", {class: "facts"}, arr(P.known_facts).slice(0, 6).map(f => h("li", null, f)))),
     h("p", {class: "note"}, arr(P.hidden_facts).length + " more things are true about " + p.name + " that come out only if you ask the right questions. The grade counts how many you find."),
     h("div", {class: "row"}, h("span", {class: "note"}, "Difficulty"), segDifficulty()),
-    h("div", {class: "row"}, h("button", {class: "btn primary", id: "start", onclick: startSpar}, "Start the call"), h("span", {class: "note", id: "spar-avail"}, sample ? "" : "Sparring runs on Claude inside the page. Open this in Claude to use it.")));
+    h("div", {class: "row"}, h("button", {class: "btn primary", id: "start", onclick: startSpar}, "Start the call"), h("span", {class: "note", id: "spar-avail"}, sample ? "" : "Sparring runs on Claude inside the page. Open this in Claude to use it."))]);
   const btn = $("#start"); if (btn && !sample) btn.disabled = true;
 }
 function segDifficulty() {
@@ -1127,12 +1164,12 @@ async function gradeGauntlet() {
     G.results.push({quote: it.quote, who: it.who, category: it.category, answer: ans, score: sc, grade: r});
     out.textContent = "";
     const chk = (ok, l) => h("span", {class: "pill " + (ok === true || ok === "true" ? "good" : "bad")}, (ok === true || ok === "true" ? "\u2713 " : "\u2717 ") + l);
-    out.append(h("div", {class: "grade"}, h("div", {class: "gscore"}, sc + "/5"), h("div", {class: "row"}, chk(r.agree, "Agree"), chk(r.answered_underneath, "Answer underneath"), chk(r.asked_again, "Ask again"))),
+    add(out, [h("div", {class: "grade"}, h("div", {class: "gscore"}, sc + "/5"), h("div", {class: "row"}, chk(r.agree, "Agree"), chk(r.answered_underneath, "Answer underneath"), chk(r.asked_again, "Ask again"))),
       r.worked ? h("p", null, h("strong", null, "Worked: "), r.worked) : null,
       r.change ? h("p", null, h("strong", null, "Change: "), r.change) : null,
       r.stronger_line ? h("div", {class: "oneliner"}, h("strong", null, "Stronger: "), r.stronger_line) : null,
       it.try ? h("p", {class: "note"}, "From the tape breakdown: " + it.try) : null,
-      h("div", {class: "row"}, h("button", {class: "btn primary", id: "g-next", onclick: nextGauntlet}, G.i + 1 < G.items.length ? "Next objection" : "Finish")));
+      h("div", {class: "row"}, h("button", {class: "btn primary", id: "g-next", onclick: nextGauntlet}, G.i + 1 < G.items.length ? "Next objection" : "Finish"))]);
     $("#g-next").focus();
   } catch (e) {
     out.textContent = ""; out.append(h("p", {class: "note"}, errCopy(e))); btn.disabled = false;
@@ -1160,9 +1197,30 @@ function nextGauntlet() {
 
 /* ================= PROOF ================= */
 let proofFilter = null;
+let CHECKS = {};            // evidence id -> {ok, at}
+let checksWritable = true;
+function isChecked(e) { return !!(CHECKS[e.id] && CHECKS[e.id].ok) || e.verified === true; }
+async function toggleCheck(e, btn) {
+  if (!db) return;
+  const next = Object.assign({}, CHECKS);
+  if (next[e.id] && next[e.id].ok) delete next[e.id]; else next[e.id] = {ok: true, at: new Date().toISOString()};
+  btn.disabled = true;
+  try { await db.doc("checks/evidence").set({items: next}); CHECKS = next; }
+  catch (err) { checksWritable = false; }
+  finally { btn.disabled = false; renderProof(); }
+}
+function verifyBanner() {
+  const items = D.evidence.items; const n = items.length;
+  const checked = items.filter(isChecked).length;
+  const b = $("#verify-banner"); b.hidden = !n || checked === n;
+  if (b.hidden) return;
+  $("#verify-head").textContent = checked ? checked + " of " + n + " numbers checked. Check the rest before you use them." : "None of these numbers has been checked against its source yet.";
+  $("#verify-body").textContent = D.meta.verify_note || "They were found through search results; the source pages couldn't be opened while this was built. Open the source, confirm the number, then tick \u201cI checked it\u201d. Until then, treat each one as a lead, not a fact. Your own rule: provable numbers only.";
+}
 function renderProof() {
   const cards = D.proof;
   $("#c-proof").textContent = cards.length ? cards.length : "";
+  verifyBanner();
   const chips = $("#proof-chips"); chips.textContent = "";
   const cats = cards.map(c => c.category);
   [null].concat(cats).forEach(k => chips.append(h("button", {class: "chip", "aria-pressed": proofFilter === k ? "true" : "false", onclick: () => { proofFilter = k; renderProof(); }}, k ? catLabel(k) : "All")));
@@ -1178,7 +1236,7 @@ function renderProof() {
       quotes.length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "How they said it"), quotes.slice(0, 4).map(q => h("blockquote", null, "“" + q.q + "”", h("span", {class: "who"}, q.who + " · ", tsLink(q.ts, q.m))))) : null,
       h("div", {class: "say"}, h("b", null, "Say this"), c.say_this),
       arr(c.then_ask).length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Then ask"), h("ul", {class: "lessons"}, arr(c.then_ask).map(x => h("li", null, x)))) : null,
-      ev.length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Numbers you can cite"), h("ul", {class: "lessons"}, ev.map(e => h("li", null, e.say_it_like_this || e.claim, " ", h("a", {href: e.url, target: "_blank", rel: "noopener", class: "note"}, "(" + (e.publisher || e.source_title || "source") + (e.date ? ", " + e.date : "") + ")"), e.confidence && e.confidence !== "high" ? h("span", {class: "note"}, " · " + e.confidence + " confidence") : null)))) : null,
+      ev.length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Numbers you can cite"), h("ul", {class: "lessons"}, ev.map(e => h("li", null, e.say_it_like_this || e.claim, " ", e.url ? h("a", {href: e.url, target: "_blank", rel: "noopener", class: "note"}, "(" + (e.publisher || e.source_title || "source") + (e.date ? ", " + e.date : "") + ")") : h("span", {class: "note"}, "(" + (e.publisher || "calculation") + ")"), " ", isChecked(e) ? h("span", {class: "note okv"}, "\u2713 checked") : h("span", {class: "note unv"}, "unchecked"), e.confidence && e.confidence !== "high" ? h("span", {class: "note"}, " · " + e.confidence + " confidence") : null)))) : null,
       arr(c.avoid).length ? h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "Don't"), h("ul", {class: "lessons"}, arr(c.avoid).map(x => h("li", null, x)))) : null,
       c.source_note ? h("p", {class: "note"}, c.source_note) : null,
       h("div", {class: "row"}, h("button", {class: "btn small", onclick: () => { const p = PERSONAS.find(pp => arr(pp.persona && pp.persona.objections).some(o => o.category === c.category)); if (p) { pickOpponent(p.id); show("spar"); } }}, "Practice this objection"))));
@@ -1194,7 +1252,7 @@ function renderProof() {
 function renderEvidence() {
   const t = $("#ev-topic").value;
   const tb = $("#evtable"); tb.textContent = "";
-  tb.append(h("thead", null, h("tr", null, h("th", null, "Topic"), h("th", null, "Number"), h("th", null, "Claim"), h("th", null, "Say it like this"), h("th", null, "Source"))));
+  tb.append(h("thead", null, h("tr", null, h("th", null, "Topic"), h("th", null, "Number"), h("th", null, "Claim"), h("th", null, "Say it like this"), h("th", null, "Source"), h("th", null, "Checked"))));
   const body = h("tbody");
   D.evidence.items.filter(e => !t || e.topic === t).forEach(e => {
     const note = h("span", {class: "note"});
@@ -1203,7 +1261,8 @@ function renderEvidence() {
       h("td", {class: "val"}, e.value || ""),
       h("td", null, e.claim || "", e.caveat ? h("div", {class: "note"}, e.caveat) : null),
       h("td", null, e.say_it_like_this || "", " ", h("button", {class: "copy", onclick: () => copyText(e.say_it_like_this || e.claim, note)}, "Copy"), " ", note),
-      h("td", null, h("a", {href: e.url, target: "_blank", rel: "noopener"}, e.publisher || e.source_title || "link"), h("div", {class: "note"}, [e.date, e.verified === false ? "unverified" : null, e.confidence ? e.confidence + " confidence" : null].filter(Boolean).join(" · ")))));
+      h("td", null, e.url ? h("a", {href: e.url, target: "_blank", rel: "noopener"}, e.publisher || e.source_title || "link") : h("span", null, e.publisher || "calculation"), h("div", {class: "note"}, [e.date, e.confidence ? e.confidence + " confidence" : null].filter(Boolean).join(" · "))),
+      h("td", null, db && checksWritable ? (() => { const b = h("button", {class: "chk", "aria-pressed": isChecked(e) ? "true" : "false", title: "Tick after you've opened the source and confirmed the number"}, isChecked(e) ? "\u2713 Checked" : "I checked it"); b.addEventListener("click", () => toggleCheck(e, b)); return b; })() : h("span", {class: isChecked(e) ? "okv" : "unv"}, isChecked(e) ? "\u2713" : "No"))));
   });
   tb.append(body);
 }
@@ -1263,7 +1322,7 @@ function computeMath() {
   const days = M.program_days || 90, daysPerMonth = M.days_per_month || 30.4;
   const months3 = days / 30, spend = perDay * daysPerMonth * months3;
   const cpl = Math.max(1, mv("m-cpl")), book = mv("m-book") / 100, showR = mv("m-show") / 100, close = mv("m-close") / 100;
-  $("#o-rate").textContent = money(rate) + "/mo"; $("#o-spend").textContent = money(perDay) + " = " + money(spend) + " / " + days + " days"; $("#o-guar").textContent = guar;
+  $("#o-rate").textContent = money(rate) + "/mo"; $("#o-spend").textContent = money(perDay) + " · " + money(spend) + " total"; $("#o-guar").textContent = guar;
   const empty = beds - filled;
   // beds board
   const eLeads = spend / cpl, eBooked = eLeads * book, eShown = eBooked * showR, eMoves = Math.min(empty, eShown * close);
@@ -1317,7 +1376,7 @@ function computeMath() {
     const sv = S.shown.map((sh, k) => economics(sh, S.moves[k]).surven);
     const hit = S.shown.filter(x => x >= guar).length / S.shown.length;
     const kI = $("#kpis-inside"); kI.textContent = "";
-    [[money1k(E.surven), "your expected profit (after card fees + phone)"], [money1k(q(sv, 0.1)) + " to " + money1k(q(sv, 0.9)), "your profit range (middle 80%)"], [money(perShownAds), "ad cost per shown tour"], [pct(hit), "chance of hitting " + guar + " shown tours"]]
+    [[money1k(E.surven), "your expected profit (after card fees + phone)"], [q(sv, 0.1) === q(sv, 0.9) ? money1k(q(sv, 0.1)) : money1k(q(sv, 0.1)) + " to " + money1k(q(sv, 0.9)), q(sv, 0.1) === q(sv, 0.9) ? "your profit in every simulated run" : "your profit range (middle 80%)"], [money(perShownAds), "ad cost per shown tour"], [pct(hit), "chance of hitting " + guar + " shown tours"]]
       .forEach(([n, l]) => kI.append(h("div", {class: "kpi"}, h("div", {class: "n", style: "font-size:" + (n.length > 12 ? "22px" : "30px")}, n), h("div", {class: "l"}, l))));
     $("#risk-head").textContent = hit >= 0.8 ? "The guarantee is safe in this scenario." : hit >= 0.5 ? "The guarantee is a coin flip or better, but not safe." : "The guarantee fails more often than not in this scenario.";
     $("#risk-note").textContent = "Shown tours across 2,000 simulated " + days + "-day runs. Green bars meet the guarantee of " + guar + ". Lead cost varies ±25% run to run; each step is a random draw at the rates on the left.";
@@ -1360,6 +1419,8 @@ if (window.claude && typeof window.claude.use === "function") {
     if (!db) { renderHistory(); return; }
     try {
       db.collection("spars").orderBy("ended_at", "desc").limit(40).onSnapshot(snap => { REPS = snap.docs.map(x => x.data()).filter(Boolean); renderHistory(); }, () => { renderHistory(); });
+      db.doc("checks/evidence").onSnapshot(snap => { CHECKS = (snap.exists && snap.data() && snap.data().items) || {}; renderProof(); }, () => {});
+      renderProof();
     } catch (e) { renderHistory(); }
   }).catch(() => {});
 }
