@@ -1,0 +1,12 @@
+{
+  "current_offer": {"name": "Example 90-day program", "promise": "Fill empty beds with booked tours.", "components": ["Ads", "Landing page", "Fast follow-up on every inquiry", "Tour booking"], "guarantee": "Example: N shown tours in 90 days or the fee back."},
+  "frameworks": [{"name": "AAA", "rule": "Agree, Answer, Ask again."}],
+  "voice_rules": [{"rule": "Plain words, short sentences."}],
+  "coach_rubric": [
+    {"dimension": "Discovery depth", "what_good_looks_like": "Learns beds, rate, occupancy and how inquiries are handled before pitching.", "red_flags": ["Pitches in the first 5 minutes"], "weight": 5},
+    {"dimension": "Pain in their words", "what_good_looks_like": "The prospect states the cost of the problem themselves.", "red_flags": ["Joey supplies the pain"], "weight": 4},
+    {"dimension": "Objection handling", "what_good_looks_like": "Agrees, answers what is under the objection, asks again.", "red_flags": ["Argues"], "weight": 4},
+    {"dimension": "Next step", "what_good_looks_like": "Leaves with a dated, concrete next step with every decider.", "red_flags": ["I'll send you something"], "weight": 4},
+    {"dimension": "Talk ratio", "what_good_looks_like": "Prospect talks most of the call.", "red_flags": ["Monologues over 90 seconds"], "weight": 3}
+  ]
+}

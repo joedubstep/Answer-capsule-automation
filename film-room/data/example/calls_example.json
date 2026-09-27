@@ -1,0 +1,47 @@
+[
+  {
+    "call_id": 1001,
+    "fathom_url": "https://fathom.video/",
+    "title": "Example discovery call",
+    "date": "2026-01-15",
+    "duration_min": 38,
+    "kind": "sales",
+    "prospect": {
+      "first_name": "Pat (example)",
+      "role": "owner",
+      "business": "Maple House (fictional)",
+      "location": "Sacramento, CA",
+      "beds": 6,
+      "care_type": "Board and care",
+      "monthly_rate": "$5,000",
+      "occupancy_now": "4 of 6",
+      "payer_mix": "Private pay",
+      "situation": "Made-up example so the page renders without private data. Two beds open for a month; relies on a placement agent."
+    },
+    "offer_pitched": "Example: $X for 90 days plus ad spend, tour guarantee.",
+    "outcome": "follow-up pending",
+    "outcome_detail": "Asked for a case study before deciding.",
+    "persona": {
+      "temperament": "Friendly, cautious, short on time.",
+      "speech_patterns": ["What does it cost?", "I need to think about it."],
+      "opening_move": "Hi, I only have a few minutes.",
+      "known_facts": ["Two beds are empty.", "Uses a placement agent."],
+      "hidden_facts": ["Unlocked by asking how calls are handled: misses calls during shifts."],
+      "pains": ["Empty beds for a month."],
+      "objections": [
+        {"objection": "Wants proof", "quote": "Do you have any results you can show me?", "ts_url": "https://fathom.video/?timestamp=1260", "minute": 21, "category": "proof", "joey_response_quote": "We're pretty new, but it works.", "response_rating": 2, "better_response": "Fair ask. Here's what the numbers look like for a home your size, bad case included."},
+        {"objection": "Price", "quote": "That's more than I expected.", "ts_url": "https://fathom.video/?timestamp=1800", "minute": 30, "category": "price", "joey_response_quote": "It pays for itself.", "response_rating": 2, "better_response": "Compared to what the two empty beds cost you each month?"}
+      ],
+      "what_moves_them": ["Seeing the cost of empty beds."],
+      "deal_breakers": ["Long contracts."],
+      "decision_process": "Decides with a business partner."
+    },
+    "joey_moments": {
+      "strong": [{"quote": "What made you take this call today?", "ts_url": "https://fathom.video/?timestamp=90", "why": "Open question that got the story."}],
+      "weak": [{"quote": "So let me walk you through our whole system.", "ts_url": "https://fathom.video/?timestamp=600", "why": "Pitched before learning the numbers.", "better_line": "Before I show you anything, how many families called last month?"}]
+    },
+    "metrics": {"joey_talk_share_pct": 58, "joey_questions_asked": 14, "open_discovery_questions": 5, "minute_price_first_said": 24, "minute_guarantee_first_said": 26, "longest_joey_monologue_sec": 190, "metrics_note": "Example values."},
+    "turning_points": [{"minute": 12, "ts_url": "https://fathom.video/?timestamp=720", "what": "Prospect shares the missed-call story.", "direction": "warmer"}, {"minute": 24, "ts_url": "https://fathom.video/?timestamp=1440", "what": "Price lands before pain is quantified.", "direction": "colder"}],
+    "lessons": ["Quantify the cost of empty beds before naming a price."]
+  }
+]

@@ -1,0 +1,4 @@
+[
+  {"category": "proof", "title": "\"Show me it works\"", "what_is_really_going_on": "They have been burned and are asking you to carry some of the risk.", "say_this": "Fair. Here are the numbers for a home your size, the bad case too. And here's what happens if we miss.", "then_ask": ["What would you need to see in the first 30 days to know it's working?"], "evidence_ids": [], "avoid": ["Inventing a case study."]},
+  {"category": "price", "title": "\"That's more than I expected\"", "say_this": "Compared to what the empty beds cost you each month?", "then_ask": ["What does one empty bed cost you a month?"], "evidence_ids": []}
+]
