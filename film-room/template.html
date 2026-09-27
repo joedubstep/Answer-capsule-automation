@@ -1287,16 +1287,17 @@ function computeMath() {
   const oi = parseInt($("#m-offer").value, 10) || 0; const O = OFFERS[oi] || {kind: "flat", fee: 6000, owner_pays_ads: true, label: "Flat fee"};
   const cardFee = M.card_fee || 0.03, phone = (M.phone_per_month || 50) * months3;
   const perShownAds = eShown > 0 ? spend / eShown : spend;
-  function economics(shown) {
+  function economics(shown, moves) {
     let ownerFee = 0, ownerAds = 0, survenAds = 0;
     if (O.kind === "flat") { ownerFee = O.fee; ownerAds = spend; }
+    else if (O.kind === "per_move") { ownerFee = (O.fee || 0) + O.per_move * Math.min(moves, O.max_moves || moves); ownerAds = O.owner_pays_ads === false ? 0 : spend; survenAds = O.owner_pays_ads === false ? spend : 0; }
     else if (O.kind === "hybrid") { ownerFee = O.fee + O.per_tour * shown; ownerAds = spend; }
     else if (O.kind === "per_tour") { ownerFee = O.fee + O.per_tour * shown; survenAds = spend; }
     else if (O.kind === "try_first") { const firstCost = shown >= 1 ? Math.min(spend, spend / Math.max(shown, 1)) : spend; survenAds = firstCost; ownerFee = shown >= 1 ? O.fee : 0; ownerAds = spend - firstCost; }
     const surven = ownerFee * (1 - cardFee) - phone - survenAds;
     return {ownerFee, ownerAds, ownerAll: ownerFee + ownerAds, surven};
   }
-  const E = economics(eShown);
+  const E = economics(eShown, eMoves);
   const months = M.value_months || 12;
   const valuePerMove = rate * months;
   const payback = E.ownerAll / rate;
@@ -1313,7 +1314,7 @@ function computeMath() {
   // inside view
   const inside = $("#m-inside").checked; $("#inside").hidden = !inside;
   if (inside) {
-    const sv = S.shown.map(economics).map(x => x.surven);
+    const sv = S.shown.map((sh, k) => economics(sh, S.moves[k]).surven);
     const hit = S.shown.filter(x => x >= guar).length / S.shown.length;
     const kI = $("#kpis-inside"); kI.textContent = "";
     [[money1k(E.surven), "your expected profit (after card fees + phone)"], [money1k(q(sv, 0.1)) + " to " + money1k(q(sv, 0.9)), "your profit range (middle 80%)"], [money(perShownAds), "ad cost per shown tour"], [pct(hit), "chance of hitting " + guar + " shown tours"]]
