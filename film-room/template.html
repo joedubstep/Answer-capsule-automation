@@ -141,6 +141,12 @@ blockquote .who{display:block;margin-top:6px;font:500 12px var(--f-mono);color:v
 .stars{font:600 12px var(--f-mono);color:var(--muted)}
 ul.lessons{margin:0;padding-left:20px;display:grid;gap:6px}
 
+.loops{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:900px){.loops{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}}
+.loop{display:grid;gap:8px;align-content:start;padding:14px 16px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2)}
+.loop .who{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.loop .who strong{font:700 21px/1.1 var(--f-display)}
+.loop .script{font-size:14.5px;padding:10px 12px;border-radius:8px;background:var(--surface);border-left:3px solid var(--mark)}
 /* spar */
 .spar-layout{display:grid;gap:18px;grid-template-columns:1fr}
 @media (min-width:980px){.spar-layout{grid-template-columns:320px 1fr}}
@@ -281,6 +287,10 @@ details.more>summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--i
       <p class="lede" id="tape-lede"></p>
     </div>
     <div class="scoreboard" id="scoreboard"></div>
+    <div class="panel stack" id="loops-panel" hidden>
+      <div class="section-head"><h3>Open loops</h3><span class="note">Deals still in play, and the next move on each.</span></div>
+      <div class="loops" id="loops"></div>
+    </div>
     <div class="grid-2">
       <div class="panel stack">
         <div class="section-head"><h3>Where calls go sideways</h3><span class="note">Objections raised, by type. Tap one to open its proof card.</span></div>
@@ -541,6 +551,22 @@ function renderTape() {
   tiles.forEach(t => sb.append(h("div", {class: "score"}, h("div", {class: "n"}, t[0], t[1] ? h("small", null, t[1]) : null), h("div", {class: "l"}, t[2]))));
   if (!calls.length) sb.after(h("div", {class: "empty"}, "No calls loaded yet."));
 
+  // open loops
+  const loops = arr(D.meta.open_loops);
+  $("#loops-panel").hidden = !loops.length;
+  const lb = $("#loops"); lb.textContent = "";
+  loops.forEach(l => {
+    const note = h("span", {class: "note"});
+    lb.append(h("div", {class: "loop"},
+      h("div", {class: "who"}, h("strong", null, l.who), h("span", {class: "pill " + (l.tone || "info")}, l.status || "")),
+      l.where_it_stands ? h("p", null, l.where_it_stands) : null,
+      l.next_move ? h("p", null, h("strong", null, "Next move: "), l.next_move) : null,
+      l.script ? h("div", {class: "script"}, l.script) : null,
+      h("div", {class: "row"}, l.script ? h("button", {class: "copy", onclick: () => copyText(l.script, note)}, "Copy script") : null, note,
+        l.call_id ? h("button", {class: "btn small ghost", onclick: () => { const d = document.getElementById("call-" + l.call_id); if (d) { d.open = true; d.scrollIntoView({behavior: "smooth"}); } }}, "See the call") : null,
+        l.persona_call_id ? h("button", {class: "btn small ghost", onclick: () => { pickOpponent("call-" + l.persona_call_id, l.spar_context); show("spar"); }}, "Rehearse the follow-up") : null)));
+  });
+
   // objection bars
   const counts = {};
   calls.forEach(c => arr(c.persona && c.persona.objections).forEach(o => { const k = o.category || "other"; counts[k] = (counts[k] || 0) + 1; }));
@@ -721,9 +747,11 @@ function renderOpps() {
       h("span", {class: "tags"}, p.source === "composite" ? h("span", {class: "pill info"}, "Composite") : h("span", {class: "pill plain"}, "From your " + (p.date || "") + " call"), uniq.map(u => h("span", {class: "pill bad"}, u)))));
   });
 }
-function pickOpponent(id) {
-  if (spar && spar.active && !spar.ended) { if (!confirmInline("You're mid-call. Switch opponents and drop this call?", () => { spar = null; pickOpponent(id); })) return; }
-  current = PERSONAS.find(p => p.id === id) || PERSONAS[0] || null;
+function pickOpponent(id, followup) {
+  if (spar && spar.active && !spar.ended) { if (!confirmInline("You're mid-call. Switch opponents and drop this call?", () => { spar = null; pickOpponent(id, followup); })) return; }
+  setMode("call");
+  const base = PERSONAS.find(p => p.id === id) || PERSONAS[0] || null;
+  current = base && followup ? Object.assign({}, base, {context: followup, followup}) : base;
   spar = null;
   renderOpps();
   renderBrief();
@@ -779,6 +807,7 @@ function personaSheet(p, includeHidden) {
   const lines = [];
   lines.push("NAME: " + p.name + (p.business ? " (" + p.business + ")" : "") + (p.location ? ", " + p.location : ""));
   if (p.situation) lines.push("SITUATION: " + p.situation);
+  if (p.followup) lines.push("WHERE THINGS STAND (this is a FOLLOW-UP call, you have already talked to Joey before): " + p.followup);
   [["Beds", p.beds], ["Care", p.care_type], ["Rate", p.rate], ["Occupancy", p.occupancy]].forEach(([k, v]) => { if (v) lines.push(k.toUpperCase() + ": " + v); });
   if (P.temperament) lines.push("TEMPERAMENT: " + P.temperament);
   if (arr(P.speech_patterns).length) lines.push("THINGS YOU ACTUALLY SAY (use this voice): " + arr(P.speech_patterns).map(x => "\"" + x + "\"").join(" / "));
@@ -1006,7 +1035,7 @@ function renderDebrief(rec) {
       h("div", {class: "stack"}, h("div", {class: "eyebrow"}, "What you missed"), h("ul", {class: "lessons"}, arr(g.hidden_missed).map(x => h("li", null, typeof x === "string" ? x : [x.fact, x.question ? h("div", {class: "note"}, "Ask: " + x.question) : null]))))),
     g.drill ? h("div", {class: "oneliner"}, h("strong", null, "Next rep: "), g.drill) : null,
     h("details", {class: "more"}, h("summary", null, "Read the transcript"), h("div", {class: "stack", style: "margin-top:10px"}, arr(rec.turns).map(t => h("div", {class: "bubble " + (t.role === "user" ? "me" : "them"), style: "max-width:100%"}, h("span", {class: "who"}, t.role === "user" ? "You" : rec.persona_name), t.content)))),
-    h("div", {class: "row"}, h("button", {class: "btn primary", onclick: () => { current = PERSONAS.find(p => p.id === rec.persona_id) || current; spar = null; renderOpps(); renderBrief(); }}, "Run it back"), h("button", {class: "btn", onclick: () => { spar = null; renderBrief(); }}, "Back to brief")));
+    h("div", {class: "row"}, h("button", {class: "btn primary", onclick: () => { if (!current || current.id !== rec.persona_id) current = PERSONAS.find(p => p.id === rec.persona_id) || current; spar = null; renderOpps(); renderBrief(); }}, "Run it back"), h("button", {class: "btn", onclick: () => { spar = null; renderBrief(); }}, "Back to brief")));
   body.append(d);
   body.scrollIntoView({block: "start", behavior: "smooth"});
 }
