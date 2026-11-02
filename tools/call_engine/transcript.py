@@ -31,8 +31,7 @@ LINE = re.compile(r"^\s*\[(?P<ts>\d{1,2}(?::\d{2}){1,2})\](?:\((?P<url>[^)\s]+)\
 WORD = re.compile(r"[A-Za-z0-9']+")
 SENT_SPLIT = re.compile(r"(?<=[.?!])\s+")
 
-_FLAGS = [dict(f, _re=rules.compile_all(f["patterns"]), _gre=rules.compile_all(f.get("guest_patterns", [])))
-          for f in rules.FLAGS]
+_FLAGS = [dict(f, _re=rules.compile_all(f["patterns"])) for f in rules.FLAGS]
 _MOVES = [dict(m, _re=rules.compile_all(m["patterns"])) for m in rules.MOVES]
 _OBJ = [dict(o, _re=rules.compile_all(o["patterns"])) for o in rules.OBJECTIONS]
 _PROMISE = rules.compile_all(rules.PROMISE)
@@ -209,26 +208,16 @@ def _share(turns, host, start=None, end=None):
 def scan_flags(turns, host):
     flags = []
     for t in turns:
-        is_host = t["speaker"] == host
+        if t["speaker"] != host:
+            continue
         for s in sentences(t["text"]):
-            hit_rules = set()
             for f in _FLAGS:
-                if f["id"] == "unverified_claim" and "invented_client" in hit_rules:
-                    continue     # one sentence, one claim flag: the top one wins
-                regs = f["_re"] if is_host else f["_gre"]
-                if not regs:
-                    continue
-                m = next((r.search(s) for r in regs if r.search(s)), None)
+                m = next((r.search(s) for r in f["_re"] if r.search(s)), None)
                 if not m:
                     continue
                 item = _hit(t, s)
                 item.update({"rule": f["id"], "severity": f["severity"], "label": f["label"], "fix": f["fix"],
                              "match": m.group(0)})
-                hit_rules.add(f["id"])
-                if not is_host:
-                    item["speaker_uncertain"] = True
-                    item["severity"] = "medium" if f["severity"] == "top" else "low"
-                    item["label"] = f["label"] + " (labeled as the other speaker; Fathom may have the label off by a line)"
                 flags.append(item)
     flags.sort(key=lambda x: (rules.SEVERITY_ORDER.get(x["severity"], 9), x["t"]))
     return flags
@@ -363,9 +352,6 @@ def _check(cid, label, result, evidence=None, note=""):
 def auto_checks(a):
     """Deterministic first pass on the rubric rows Python can see. The model confirms or overrides."""
     mv, out = a["moves"], []
-    top = [f for f in a["flags"] if f["rule"] == "invented_client" and not f.get("speaker_uncertain")]
-    out.append(_check("X1", "No invented client stories or results", "miss" if top else "pass",
-                      top[0] if top else None, "%d flagged line(s)" % len(top) if top else "none flagged"))
     gt = [f for f in a["flags"] if f["rule"] == "good_time_ask"]
     r_min = a["rapport_minutes"]
     if gt:

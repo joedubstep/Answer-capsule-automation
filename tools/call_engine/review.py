@@ -18,9 +18,9 @@ Files live in /tmp/call_engine/<recording id>/ (or under $CALL_ENGINE_DIR). Comm
 
 review.json (written by the model), sales call:
   {"type": "Discovery|Close|Follow-up", "with": "Pat (Maple House)", "outcome": "one line",
-   "scores": {"X1": {"result": "pass|partial|miss|n/a", "note": "...", "ts": "12:01"}, ... every RUBRIC_ITEMS id},
+   "scores": {"Q1": {"result": "pass|partial|miss|n/a", "note": "...", "ts": "12:01"}, ... every RUBRIC_ITEMS id},
    "flags_review": {"<flag number from the packet>": {"status": "confirmed|cleared", "why": "..."}},
-   "extra_flags": [{"rule": "invented_client", "ts": "MM:SS", "quote": "exact words"}],
+   "extra_flags": [{"rule": "<a rules.FLAGS id>", "ts": "MM:SS", "quote": "exact words"}],
    "objections": [{"ts": "MM:SS", "objection": "...", "handling": "...", "verdict": "handled|partial|missed"}],
    "owed": [{"item": "...", "due": "YYYY-MM-DD", "ts": "MM:SS"}],
    "next_step": {"what": "...", "when": "YYYY-MM-DD HH:MM or null"},
@@ -123,9 +123,9 @@ def packet_view(p):
         lines.append("WARNING: this recording is not in new.json, so the date and link are unknown. Write meeting.json "
                      "(see the skill) and run packet again with --meeting.")
     lines.append("")
-    lines.append("FLAGS (confirm or clear each in flags_review; top severity is always shown to Joey):")
-    shown = [f for f in p["flags"] if f["severity"] in ("top", "high")]
-    rest = [f for f in p["flags"] if f["severity"] not in ("top", "high")]
+    lines.append("FLAGS (confirm or clear each in flags_review):")
+    shown = [f for f in p["flags"] if f["severity"] == "high"]
+    rest = [f for f in p["flags"] if f["severity"] != "high"]
     for f in shown + rest[:VIEW_MAX]:
         lines.append('  #%d [%s] %s at %s %s: "%s"' % (f["n"], f["severity"], f["rule"], f["ts"], f["url"], f["quote"]))
     if len(rest) > VIEW_MAX:
@@ -173,17 +173,12 @@ def validate_sales(rv, packet):
         s = scores.get(i)
         if not s or s.get("result") not in rules.RESULTS:
             errs.append("scores.%s needs result pass|partial|miss|n/a" % i)
-    fr = rv.get("flags_review") or {}
-    for f in packet["flags"]:
-        if f["severity"] == "top":
-            r = fr.get(str(f["n"])) or {}
-            if r.get("status") not in ("confirmed", "cleared"):
-                errs.append("flag #%d is top severity: set flags_review.%d.status confirmed or cleared" % (f["n"], f["n"]))
-            elif r.get("status") == "cleared" and not r.get("why"):
-                errs.append("flag #%d cleared without a why" % f["n"])
+    flag_ids = [r["id"] for r in rules.FLAGS]
     for x in rv.get("extra_flags") or []:
         if not _ts_ok(x.get("ts")) or not x.get("quote"):
             errs.append("extra_flags items need ts MM:SS and the exact quote")
+        if x.get("rule") not in flag_ids:
+            errs.append("extra_flags rule must be one of: " + ", ".join(flag_ids))
     fx = rv.get("fix_next_time") or []
     if not 1 <= len(fx) <= 3:
         errs.append("fix_next_time needs 1 to 3 items")
@@ -250,12 +245,12 @@ def _flag_lines(packet, rv, base):
     fr = rv.get("flags_review") or {}
     confirmed, cleared = [], []
     for f in packet["flags"]:
-        st = (fr.get(str(f["n"])) or {}).get("status", "confirmed" if f["severity"] != "top" else None)
+        st = (fr.get(str(f["n"])) or {}).get("status")
         row = dict(f)
         row["why"] = (fr.get(str(f["n"])) or {}).get("why")
         (cleared if st == "cleared" else confirmed).append(row)
     for x in rv.get("extra_flags") or []:
-        rule = next((r for r in rules.FLAGS if r["id"] == x.get("rule")), rules.FLAGS[0])
+        rule = next(r for r in rules.FLAGS if r["id"] == x.get("rule"))
         confirmed.append({"rule": rule["id"], "severity": rule["severity"], "label": rule["label"], "fix": rule["fix"],
                           "ts": x["ts"], "url": _link(base, x["ts"]), "quote": x["quote"], "t": tr.ts_to_secs(x["ts"])})
     confirmed.sort(key=lambda f: (rules.SEVERITY_ORDER.get(f["severity"], 9), f.get("t", 0)))
@@ -270,16 +265,7 @@ def render_sales(packet, rv, now=None):
     base = a.get("base_url") or (meta.get("url") or "").split("?")[0]
     url = meta.get("url") or base
     confirmed, cleared = _flag_lines(packet, rv, base)
-    top = [f for f in confirmed if f["severity"] == "top"]
-    other = [f for f in confirmed if f["severity"] != "top"]
     parts = []
-    if top:
-        body = "\n".join('- [%s](%s) "%s"' % (f["ts"], f["url"], _clean(f["quote"])) for f in top)
-        parts.append('<callout icon="\U0001F534" color="red_bg">\n<b>TOP SEVERITY: made-up client story or result (%d)</b>\n\n%s\n\n'
-                     'Say instead: market benchmark, or what homes in this niche see. Let the guarantee carry the risk.\n</callout>'
-                     % (len(top), body))
-    else:
-        parts.append("<b>TOP SEVERITY:</b> no made-up client stories found.")
     sc = rv["scores"]
     passed = sum(1 for i in ITEM_IDS if sc[i]["result"] == "pass")
     scored = sum(1 for i in ITEM_IDS if sc[i]["result"] != "n/a")
@@ -309,9 +295,9 @@ def render_sales(packet, rv, now=None):
                 "[%s](%s)" % (fa["ts"], fa["url"]) if fa else "no"),
             "- Length: %s." % a.get("duration")]
     parts.append("<b>NUMBERS</b>\n\n" + "\n".join(nums))
-    if other:
-        parts.append("<b>OTHER FLAGS</b>\n\n" + "\n".join('- [%s](%s) %s: "%s" %s' % (
-            f["ts"], f["url"], f["label"], _clean(f["quote"])[:200], f["fix"]) for f in other[:10]))
+    if confirmed:
+        parts.append("<b>FLAGS</b>\n\n" + "\n".join('- [%s](%s) %s: "%s" %s' % (
+            f["ts"], f["url"], f["label"], _clean(f["quote"])[:200], f["fix"]) for f in confirmed[:10]))
     obj = rv.get("objections") or []
     parts.append("<b>OBJECTIONS</b>\n\n" + ("\n".join("- [%s](%s) %s You: %s Verdict: %s." % (
         o.get("ts"), _link(base, o.get("ts")), _clean(o.get("objection")), _clean(o.get("handling")), o.get("verdict"))
@@ -339,8 +325,8 @@ def render_sales(packet, rv, now=None):
     d = _dt.date.fromisoformat(meta["date"][:10]) if meta.get("date") else et.now_et().date()
     listen = " · ".join("%s %s" % (l["ts"], _clean(l.get("label"))) for l in rv["listen_for"])
     owed_txt = "; ".join("%s (due %s)" % (_clean(o["item"]), md_date(o["due"])) for o in owed) or "nothing owed"
-    note = "%s Next: %s. Owe: %s. Score %d of %d.%s" % (_clean(rv.get("outcome")), _clean(ns.get("what")), owed_txt, passed,
-                                                        scored, " %d made-up claim(s)." % len(top) if top else "")
+    note = "%s Next: %s. Owe: %s. Score %d of %d." % (_clean(rv.get("outcome")), _clean(ns.get("what")), owed_txt, passed,
+                                                      scored)
     cfg = load_config()
     ds = cfg["notion"]["sales_call_library_ds"].replace("collection://", "")
     props = {"Call": "%s %s %d/%d" % (_clean(rv["with"]), rv["type"], d.month, d.day), "Type": rv["type"],
@@ -348,7 +334,7 @@ def render_sales(packet, rv, now=None):
              "Watched": "__NO__", "Transcript": ("In Fathom: %s (open it, Transcript tab)" % url)[:PROP_MAX]}
     authored = [rv.get("outcome"), ns.get("what")] + list(rv.get("fix_next_time") or []) + list(rv.get("did_well") or [])
     authored += [o.get("handling") for o in obj] + [o.get("item") for o in owed]
-    return {"parent": {"data_source_id": ds}, "properties": props, "content": content}, authored, len(top)
+    return {"parent": {"data_source_id": ds}, "properties": props, "content": content}, authored
 
 
 def render_coaching(packet, rv):
@@ -405,7 +391,7 @@ def render(rid, to=None, dry_run=False, now=None):
     errs = validate_sales(rv, packet)
     if errs:
         return 1, errs, []
-    row, authored, ntop = render_sales(packet, rv, now)
+    row, authored = render_sales(packet, rv, now)
     ab, aw = _authored_issues(authored)
     if ab:
         return 1, ["copy (internal page text): " + x for x in ab], aw
@@ -430,7 +416,7 @@ def render(rid, to=None, dry_run=False, now=None):
     _write_json(os.path.join(d, "row.json"), row)
     owed = rv.get("owed") or []
     first = re.split(r"[\s(]", rv.get("with") or "?")[0]
-    result.update({"kind": "sales", "type": rv["type"], "with": rv.get("with"), "first": first, "top_flags": ntop,
+    result.update({"kind": "sales", "type": rv["type"], "with": rv.get("with"), "first": first,
                    "owed": [{"item": o["item"], "due": o["due"]} for o in owed], "draft": bool(draft),
                    "skip_email": rv.get("skip_email"), "row": "row.json",
                    "next_step": (rv.get("next_step") or {}).get("what")})
@@ -465,8 +451,6 @@ def finish(dry_run=False, created=None, new_doc=None):
         bits = ["%s %s" % (r.get("first"), r.get("type"))]
         if r.get("owed"):
             bits.append("you owe " + ", ".join("%s by %s" % (o["item"], md_date(o["due"])) for o in r["owed"][:3]))
-        if r.get("top_flags"):
-            bits.append("%d made-up client claim(s) flagged" % r["top_flags"])
         return ": ".join([bits[0], "; ".join(bits[1:])]) if len(bits) > 1 else bits[0]
     drafts = sum(1 for r in sales if r.get("draft"))
     if dry_run:
