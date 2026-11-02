@@ -1,0 +1,18 @@
+{
+ "opportunities": [
+  {
+   "id": "o1",
+   "contactId": "cPat0001",
+   "pipelineStageId": "sReplied",
+   "status": "open",
+   "updatedAt": "2026-10-30T12:00:00Z"
+  },
+  {
+   "id": "o2",
+   "contactId": "cOther",
+   "pipelineStageId": "sReplied",
+   "status": "open"
+  }
+ ],
+ "meta": {}
+}

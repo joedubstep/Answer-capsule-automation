@@ -1,0 +1,16 @@
+{
+ "contact": {
+  "id": "cChris3",
+  "firstName": "Chris",
+  "email": "chris@exampleanswered.com",
+  "tags": [
+   "email-reply"
+  ],
+  "customFields": [
+   {
+    "id": "6pUnUwaxqRfQW3q0g2AR",
+    "value": "E9"
+   }
+  ]
+ }
+}

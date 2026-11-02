@@ -1,0 +1,64 @@
+{
+  "_note": "Client Desk settings per care-home client. Non-secret system ids and Surven's own copy only: no names of people, no phone numbers, no email addresses. The location id, Joey's alert contact and the AGC field ids also live in config/surven.json; this file adds what only the Client Desk needs. A pipeline or calendar with id null is found by name at run time (match words, case-insensitive); fallback_id is used only when no name matches.",
+  "agc": {
+    "label": "American Golden Care",
+    "short": "AGC",
+    "ghl_key": "agc",
+    "env": "default_agc",
+    "artifact_key": "client_desk_agc",
+    "since": "2026-07-29",
+    "family_pipeline": {"id": "XfVVFzt8CXRnTtc9PRq5", "match": ["family"]},
+    "partner_pipeline": {"id": "MVOEVgIdYEGt21HZH8R6", "match": ["referral partner", "partner"]},
+    "tour_calendar": {"id": "uQEkJzpLsRP579RqHeXV", "match": ["tour"]},
+    "internal_contacts": [],
+    "test_events": ["zdz3aYYPuq4AROP1zOAo"],
+    "goal": {
+      "move_ins": 3,
+      "tours": null,
+      "start": "2026-09-10",
+      "by": "2026-12-08",
+      "_source": "AGC goal in morning-sales-brief data/inputs/clients/agc/profile.json: 3 move-ins in 90 days from the 9/10 launch"
+    },
+    "partner_goal": {
+      "yes_partners": 30,
+      "referrals": 6,
+      "by": "2026-10-30",
+      "_source": "Surven Calendar checkpoint on Oct 30: 30 yes partners and 6 referrals"
+    },
+    "operator_voice_names": ["joey", "joy", "joe", "joseph"],
+    "open_beds_email": {
+      "subject": "Private and shared rooms this week",
+      "greeting": "Hi {{contact.first_name}},",
+      "rooms_line": "This week we have [N] private and [N] shared rooms open for men and women at {home} in {city}.",
+      "services_line": "We help with bathing, dressing, toileting and medicines. Staff are here day and night.",
+      "ask_line": "For someone coming up for discharge, call or text me at {{location.phone}}.",
+      "signature": ["{{user.name}}", "for {home}", "{{location.phone}}", "{website}"],
+      "owner_text": "Morning. The open rooms email goes to the partners today. How many private and shared rooms are open this week?",
+      "_source": "Mirrors the real weekly 'Private and shared rooms this week' email sent from the AGC location on 2026-10-28 (read-only check, 2026-11-02). Phone and first name are GoHighLevel merge fields so no number ever sits on the page."
+    }
+  },
+  "splendor": {
+    "label": "Splendor Residence",
+    "short": "Splendor",
+    "ghl_key": "splendor",
+    "env": "splendor",
+    "artifact_key": "client_desk_splendor",
+    "since": "2026-10-15",
+    "family_pipeline": {"id": null, "match": ["family"], "fallback_id": "815Rez6cGzfUs5QSQMme"},
+    "partner_pipeline": {"id": null, "match": ["referral partner", "partner"]},
+    "tour_calendar": {"id": null, "match": ["tour"], "fallback_id": "vTGB88tDa00xLETxh6SF"},
+    "internal_contacts": ["FnhZ7GhOOdwMcjYM3VuZ", "spjjmeHvjs9NFJDD1YI3"],
+    "test_events": [],
+    "fields": {"tour_result": "Nid5KeVcJaPrKouaqVOr"},
+    "goal": {
+      "move_ins": null,
+      "tours": 6,
+      "start": "2026-10-15",
+      "by": "2027-01-13",
+      "_source": "Splendor client.md: at least 6 tours in 90 days from the 10/15 go-live. Joey: confirm, or set move_ins."
+    },
+    "partner_goal": null,
+    "operator_voice_names": ["joey", "joy", "joe", "joseph"],
+    "open_beds_email": null
+  }
+}

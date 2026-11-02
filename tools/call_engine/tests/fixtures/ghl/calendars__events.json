@@ -1,0 +1,45 @@
+{
+ "events": [
+  {
+   "id": "g1",
+   "calendarId": "siNHUDan1hhV6eKLstdq",
+   "contactId": "cPat0001",
+   "startTime": "2026-11-03T15:00:00.000Z",
+   "endTime": "2026-11-03T15:45:00.000Z",
+   "appointmentStatus": "confirmed",
+   "deleted": false,
+   "title": "Discovery Call | Joey x Pat Example",
+   "address": "https://meet.google.com/abc-defg-hij"
+  },
+  {
+   "id": "g2",
+   "calendarId": "wT88OYdr5mJs0nG5ohXU",
+   "contactId": "cJam0002",
+   "startTime": "2026-11-03T16:00:00.000Z",
+   "endTime": "2026-11-03T16:45:00.000Z",
+   "appointmentStatus": "confirmed",
+   "deleted": false,
+   "title": "Onboarding Call: Joey x Jamie Client"
+  },
+  {
+   "id": "g3",
+   "calendarId": "siNHUDan1hhV6eKLstdq",
+   "contactId": "cDrw0003",
+   "startTime": "2026-11-03T22:00:00.000Z",
+   "endTime": "2026-11-03T22:45:00.000Z",
+   "appointmentStatus": "cancelled",
+   "deleted": false,
+   "title": "Discovery Call | Joey x Drew Sample"
+  },
+  {
+   "id": "g4",
+   "calendarId": "siNHUDan1hhV6eKLstdq",
+   "contactId": "cOld0004",
+   "startTime": "2026-11-02T15:00:00.000Z",
+   "endTime": "2026-11-02T15:45:00.000Z",
+   "appointmentStatus": "confirmed",
+   "deleted": false,
+   "title": "Discovery Call | Joey x Yesterday Sample"
+  }
+ ]
+}

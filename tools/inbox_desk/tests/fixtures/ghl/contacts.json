@@ -1,0 +1,20 @@
+{
+ "contacts": [
+  {
+   "id": "cPat1",
+   "email": "pat@examplehome.com"
+  },
+  {
+   "id": "cSam2",
+   "email": "sam@exampleopt.com"
+  },
+  {
+   "id": "cChris3",
+   "email": "chris@exampleanswered.com"
+  },
+  {
+   "id": "cDana4",
+   "email": "dana@examplemissed.com"
+  }
+ ]
+}

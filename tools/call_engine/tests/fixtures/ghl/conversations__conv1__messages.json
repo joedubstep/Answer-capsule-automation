@@ -1,0 +1,21 @@
+{
+ "messages": {
+  "nextPage": false,
+  "messages": [
+   {
+    "id": "m2",
+    "dateAdded": "2026-10-22T15:00:00Z",
+    "direction": "outbound",
+    "messageType": "TYPE_EMAIL",
+    "body": "Thanks for the reply."
+   },
+   {
+    "id": "m1",
+    "dateAdded": "2026-10-22T14:00:00Z",
+    "direction": "inbound",
+    "messageType": "TYPE_EMAIL",
+    "body": "Yes we have two open rooms. We use a placement agent but they are slow. My wife handles the books."
+   }
+  ]
+ }
+}

@@ -1,0 +1,61 @@
+{
+  "_about": "Which offer the rules prescribe for a prospect, and why. Read by tools/call_engine/prep.py. Prices are NOT kept here on purpose: they change, and the live numbers are on the Notion pages under 'sources'. Every prep run re-reads those pages; if they disagree with this file, the pages win and the prep page says so. Rules are checked top to bottom; the first match wins.",
+  "as_of": "2026-11-02",
+  "sources": {
+    "offer_master": "3dce1c3d79d88063b203d0934e721836",
+    "packages": "3f1e1c3d79d88018883ad89f4cdaf4eb",
+    "close_call_kit": "3b6e1c3d79d8817391f4d9b4eb30a5f8",
+    "guarantee_conditions": "404e1c3d79d88053a10ecbb71430e58e"
+  },
+  "scope": {
+    "in": ["assisted living", "memory care", "board and care", "residential care", "personal care home", "adult family home", "independent living", "group home"],
+    "out": ["skilled nursing", "nursing home", "snf", "recovery", "sober", "re-entry", "reentry", "rehab housing", "halfway"]
+  },
+  "resident_headline_min_empty_beds": 8,
+  "tiers": {
+    "route_out": {
+      "label": "Route out, not a fit today",
+      "guarantee": "none",
+      "why_template": "{reason}",
+      "on_call": ["Act on the qualifying answer. Do not rebuild them into a fit.", "Leave the door open, warm."]
+    },
+    "travel_nurse": {
+      "label": "Travel Nurse Referral Starter Pack",
+      "guarantee": "none written yet; check the Packages page",
+      "why_template": "Rooms rent to travel nurses, not senior residents.",
+      "on_call": ["Hospitals within 30 minutes?", "Furnished rooms, utilities included?"]
+    },
+    "referral_starter": {
+      "label": "Senior Care Referral Starter Pack",
+      "guarantee": "none written yet; check the Packages page",
+      "why_template": "Cannot fund daily ad spend, so start with case managers and discharge planners.",
+      "on_call": ["Ask first: is that ad budget something you can do?", "Only if the answer is no, offer this."]
+    },
+    "full_bed_system": {
+      "label": "90 Day Full Bed System (ads, done for you)",
+      "guarantee": "Tours: the 'Dollar Menu' guarantee. [x] qualified tours in 90 days, or we work free and pay the ad spend until we hit it.",
+      "why_template": "Default ads offer. The guarantee is in tours.",
+      "on_call": ["Tier is prescribed, not chosen. Option close on payment terms only.", "Sell the process, not the guarantee."]
+    },
+    "full_bed_system_resident_headline": {
+      "label": "90 Day Full Bed System, with the resident headline allowed",
+      "guarantee": "The resident (move-in) number may be used as the headline. Advise them down to the tours guarantee; it is what gets delivered.",
+      "why_template": "8 or more empty beds and the staff to take them.",
+      "on_call": ["Capacity screen out loud first: could you staff 5 more tours next month?", "Expect to advise down to tours."]
+    }
+  },
+  "downsells": [
+    "Call support to text support (ask, don't assert)",
+    "5 ads to 3 ads (ask, don't assert)"
+  ],
+  "deposit": "Refundable deposit link is in the Close-Call Kit. Use it when 2 or more logistical objections stack. Never invent an amount on the call.",
+  "verify_on_call": {
+    "empty_beds": "How many beds, how many empty today?",
+    "staffing_ok": "If 5 more families toured next month, could you staff them?",
+    "can_fund_ads": "The plan needs a daily ad budget paid to Meta. Is that something you can do?",
+    "uses_placement_agents": "Do you use placement agents? What do they charge per move-in?",
+    "rent": "What is a month's rent per bed?",
+    "community_type": "Licensed as what: assisted living, memory care, board and care?",
+    "decision_makers": "Anyone else in this decision?"
+  }
+}

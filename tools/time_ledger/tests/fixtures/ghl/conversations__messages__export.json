@@ -1,0 +1,23 @@
+{
+ "messages": [
+  {"id": "m1", "messageType": "TYPE_CAMPAIGN_CALL", "type": 1, "direction": "outbound", "status": "completed",
+   "dateAdded": "2026-11-01T21:40:00.000Z", "meta": {"call": {"duration": 0, "status": "no-answer"}},
+   "contactId": "cSample0001", "from": "+15550000000", "to": "+15550000001"},
+  {"id": "m2", "messageType": "TYPE_CAMPAIGN_CALL", "type": 1, "direction": "outbound", "status": "completed",
+   "dateAdded": "2026-11-01T21:55:00.000Z", "meta": {"call": {"duration": 150, "status": "completed"}},
+   "contactId": "cSample0002", "from": "+15550000000", "to": "+15550000002"},
+  {"id": "m3", "messageType": "TYPE_CALL", "type": 1, "direction": "outbound", "status": "completed",
+   "dateAdded": "2026-11-01T22:30:00.000Z", "meta": {"call": {"duration": 12, "status": "completed"}},
+   "contactId": "cSample0003", "from": "+15550000000", "to": "+15550000003"},
+  {"id": "m4", "messageType": "TYPE_SMS", "type": 2, "direction": "outbound", "status": "delivered",
+   "dateAdded": "2026-11-01T22:00:00.000Z", "body": "Sample text", "contactId": "cSample0002"},
+  {"id": "m5", "messageType": "TYPE_CALL", "type": 1, "direction": "inbound", "status": "completed",
+   "dateAdded": "2026-11-01T15:00:00.000Z", "meta": {"call": {"duration": 60, "status": "completed"}},
+   "contactId": "cSample0004"},
+  {"id": "m6", "messageType": "TYPE_CAMPAIGN_CALL", "type": 1, "direction": "outbound", "status": "completed",
+   "dateAdded": "2026-11-01T12:30:00.000Z", "meta": {"call": {"duration": 0, "status": "no-answer"}},
+   "contactId": "cSample0005"}
+ ],
+ "nextCursor": null,
+ "total": 6
+}

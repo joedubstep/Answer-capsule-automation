@@ -62,7 +62,8 @@
     "learnings_ds": "collection://d785813b-1665-4fe8-a070-94f2352df299",
     "action_log_db": "d2a21af1ec6440c794ddf5a24af12ed7",
     "learnings_db": "704051ee490e41d0874715e185b875ab",
-    "answer_bank": "40ce1c3d79d881b69ac1eb3318bfeff9"
+    "answer_bank": "40ce1c3d79d881b69ac1eb3318bfeff9",
+    "call_prep_page": "3bae1c3d79d88073b144dcaa5d17b758"
   },
   "google": {
     "surven_calendar": "79863000bbbc6c74580e78120c2957338f338f264d9b96acbaac45d6610536ff@group.calendar.google.com",
@@ -83,10 +84,15 @@
     "client_desk_agc": "",
     "client_desk_splendor": "",
     "copy_checker": "",
-    "time_ledger": ""
+    "time_ledger": "",
+    "client_desk_agc_report": "",
+    "client_desk_splendor_report": ""
   },
   "campaign": {
     "price_raise_deadline_et": "2026-11-18T20:00",
     "_deadline_note": "Change here if the deadline moves; every tool reads it from this file."
+  },
+  "inbox_desk": {
+    "booking_link": "https://start.surven.ai/booking-page-6259"
   }
 }

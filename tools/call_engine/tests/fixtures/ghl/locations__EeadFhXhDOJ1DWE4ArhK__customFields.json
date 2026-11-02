@@ -1,0 +1,16 @@
+{
+ "customFields": [
+  {
+   "id": "fBeds",
+   "name": "Total Beds"
+  },
+  {
+   "id": "fType",
+   "name": "Community Type"
+  },
+  {
+   "id": "fAgent",
+   "name": "Agent Plan Log"
+  }
+ ]
+}

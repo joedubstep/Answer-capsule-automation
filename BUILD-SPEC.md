@@ -86,9 +86,9 @@ Run every tool from the repo root: `python3 -m tools.<tool>.<module> ...`. Tests
    Real outputs go to artifacts, Notion, Gmail drafts, or `/tmp`.
 3. **Never print, echo or look for an API key.**
 4. **Every piece of prospect- or client-facing text passes the copy checker** before it lands anywhere:
-   `python3 -m tools.copy_check.check --context <prospect_email|prospect_sms|client|internal> --file <path>`
-   prints JSON `{"ok": bool, "issues": [{"rule","severity","match","line","fix"}]}`. Exit code 0 means no
-   blocking issues. Fix the blocking issues; show any warnings to Joey next to the draft.
+   `python3 -m tools.copy_check.check --context <prospect_email|prospect_sms|client|internal> --file <path> --json`
+   prints JSON `{"ok": bool, "issues": [{"rule","severity","match","line","fix"}]}`. Exit 0 means no blocking
+   issues, 1 means blocking issues, 2 means a bad argument or a checker error (never treat 2 as passed). Fix the blocking issues; show any warnings to Joey next to the draft.
 5. **Copy voice** (Joey's locked rules, full list in `tools/copy_check/rules.json`):
    - no em or en dashes
    - US English

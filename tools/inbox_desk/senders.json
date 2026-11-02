@@ -1,0 +1,86 @@
+{
+  "_note": "Inbox Desk sender rules. Business domains, subject words and campaign wording only. No names of people, no phone numbers, no personal email addresses: this repo is PUBLIC. People who write from a personal address (a coach on Gmail, a client's own address) go in the private Notion page config notion.inbox_desk_settings, which the skill reads at run time (see tools/inbox_desk/settings.py). Patterns are Python regexes, matched case-insensitive. Domains match the sender's domain or any subdomain of it.",
+  "label": "Desk/Done",
+  "label_query": "desk-done",
+  "max_threads": 25,
+  "backlog_since": "2026-09-23",
+  "window_days": 3,
+
+  "campaign": {
+    "_note": "The cold email engine (surven-carehome) sends from joey@<cold domain>. Replies are forwarded into Joey's Gmail as one-message threads, so a reply is recognized by who it went to, the campaign subjects, and the quoted original under it.",
+    "mailbox_local_parts": ["joey"],
+    "shared_domains": ["surven.ai"],
+    "subjects": ["do you have an open room", "hey are you in charge of this"],
+    "quote_markers": ["surven occupancy", "how many rooms are open at", "open rooms at", "i just emailed you",
+                      "are you the right person for this at", "one-page plan", "reply no and i'll stop emailing",
+                      "i built a free tool for senior living", "close your file after this one"],
+    "plan_offer_markers": ["one-page plan", "the plan is 3 things", "the plan covers that too", "if the plan would still be useful",
+                           "thumbs up or down on the plan", "send the plan"],
+    "tool_offer_markers": ["i built a free tool", "let you give it a try"],
+    "home_patterns": [
+      "(?:open rooms|rooms are open|rooms open) at (?P<home>[^?\\n]{2,80}?) right now",
+      "right person for this at (?P<home>[^?\\n]{2,80}?)\\?",
+      "have a friend call (?P<home>[^\\n]{2,80}?) about a room",
+      "i saw (?P<home>[^\\n]{2,80}?) has (?:facebook ads|been caring)",
+      "i'm not sure i can even help (?P<home>[^\\n]{2,80}?) yet"
+    ]
+  },
+
+  "auto_reply": {
+    "subject": "^(?:re:\\s*)?(?:automatic reply|auto(?:matic)?[- ]?(?:reply|response)|autoreply|out of (?:the )?office|ooo\\b|away from|vacation|on leave|undeliverable|delivery status|returned mail|mail delivery)|ticket\\s*#|\\[ticket|case\\s*#|request received|we received your",
+    "sender_local": "(?:^|[._-])(?:no-?reply|noreply|do-?not-?reply|donotreply|mailer-daemon|postmaster|auto-?reply)(?:$|[._-])|_noreply$|-noreply$",
+    "body": "\\b(?:out of (?:the )?office|i am (?:currently )?away|i'm (?:currently )?away|away from (?:my|the) (?:desk|office)|on (?:vacation|leave|holiday|pto)\\b|limited access to (?:e-?mail|my e-?mail)|this is an automated|auto-?generated|do not reply to this|automatic(?:ally)? (?:reply|response|generated)|thank you for (?:contacting|reaching out to) our|your (?:message|e-?mail|request|ticket) (?:has been|was) (?:received|submitted)|you can expect a response|we will (?:respond|get back to you) within|ticket (?:number|#|id))"
+  },
+
+  "google_voice": {
+    "_note": "Google Voice email forwards. Texts from Joey's OWN business lines (the GHL numbers he tests with) are never answered from here: a reply would text that GHL number, and the HQ listener treats texts there as commands.",
+    "sender_domains": ["txt.voice.google.com"],
+    "senders": ["voice-noreply@google.com"],
+    "subject": "^new (?:text message|voicemail|missed call|group message)",
+    "own_line_words": ["surven", "splendor", "spledor", "americangoldencare", "american golden care", "agc"],
+    "footer_cut": ["to respond to this text message", "your account <https://voice.google.com>", "your account help center", "this email was sent to you because"]
+  },
+
+  "clients": {
+    "agc": {"label": "AGC", "domains": ["americangoldencare.com"], "relay_domains": ["mg.americangoldencare.com"]},
+    "splendor": {"label": "Splendor", "domains": ["splendorresidencehome.com"], "relay_domains": []},
+    "legacy": {"label": "Legacy client", "domains": [], "relay_domains": []}
+  },
+  "client_automation_subjects": "^(?:your visit is (?:set|soon)|your new visit time|thanks for reaching out|new .{0,40}lead!?|.*\\b(?:send|reply) test\\b|your fax|faxzero|private and shared rooms this week)",
+
+  "coaches": {
+    "senior_living_mastery": {"label": "Senior Living Mastery", "domains": ["seniorlivingmastery.com", "osbornedm.com"]},
+    "acquisition": {"label": "Acquisition.com", "domains": ["acquisition.com"]},
+    "lead_suite": {"label": "Lead Suite", "domains": ["leadsuite.agency"]}
+  },
+  "coach_recap_senders": ["no-reply@fathom.video"],
+  "coach_recap_subject": "^recap of your meeting with (?P<who>.+)$",
+
+  "vendors": {
+    "simpleclosure": {"label": "SimpleClosure", "domains": ["simpleclosure.com"]},
+    "polyshares": {"label": "Polyshares", "domains": ["polyshares.com"]},
+    "datavendor": {"label": "DataVendor", "domains": ["datavendor.ai"]},
+    "selltraces": {"label": "Sell Traces", "domains": ["selltraces.com", "selltraces.ai"]},
+    "mercor": {"label": "Mercor", "domains": ["mercor.com"]},
+    "labelbox": {"label": "Labelbox Prism", "domains": ["labelbox.com"]}
+  },
+  "vendor_action_subject": "\\b(?:action required|changes requested|question|reply|follow[- ]?up|offer|quote|proposal|next step|call|meeting|intake|finish|confirm|signature|sign)\\b",
+
+  "automation": {
+    "self_subjects": "^(?:morning sales brief|(?:agc |splendor )?follow-up plan|data sale:|inbox desk:|google account for|hq desk|client desk|call engine)",
+    "sender_domains": ["msgsndrdeliver.com"],
+    "subjects": "^(?:new lead!?|new booking!?)$"
+  },
+
+  "noise": {
+    "_note": "Everything not matched above is noise. A message that looks like a real person in the Primary tab is kept as noise/unknown_person and shown to Joey in the digest, never ignored.",
+    "bulk_local": "^(?:no-?reply|noreply|do-?not-?reply|donotreply|notifications?|notify|news(?:letter)?|updates?|info|team|hello|support|help|marketing|mailer|bounces?|digest|alerts?|billing|receipts?|account(?:s)?|security|invitations?|calendar(?:-notification)?|messages?-noreply|reminders?|stories-recap|payments?-noreply|workspace-noreply|sc-noreply|businessprofile-noreply|value|community|events?)$|(?:^|[._-])no-?reply(?:$|[._-])|noreply$",
+    "bulk_domains": ["linkedin.com", "facebookmail.com", "instagram.com", "stripe.com", "skool.com", "google.com", "youtube.com",
+                     "calendly.com", "zoom.us", "fathom.video", "improvmx.com", "mailchimp.com", "hubspot.com", "lumino.io",
+                     "x.com", "twitter.com", "tiktok.com", "medium.com", "substack.com", "notion.so", "mail.notion.so",
+                     "github.com", "vercel.com", "openai.com", "anthropic.com", "mercury.com", "amazon.com", "paypal.com"],
+    "subjects": "^(?:invitation:|updated invitation|invitation from an unknown sender|accepted:|declined:|canceled event|cancelled event|notes:|recap of your meeting|your receipt|receipt|payment (?:received|confirmation)|order (?:confirmation|#)|verify your|confirm your email|sign in to|security alert|new sign-in)",
+    "bulk_categories": ["CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL", "CATEGORY_FORUMS"],
+    "bulk_subdomains": ["updates", "update", "mail", "email", "emails", "news", "newsletter", "e", "em", "marketing", "info", "send", "mailer", "notify", "notifications", "go", "reply", "bounce", "campaign", "promo"]
+  }
+}

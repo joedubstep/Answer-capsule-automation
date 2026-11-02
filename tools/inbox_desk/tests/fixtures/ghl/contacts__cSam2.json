@@ -1,0 +1,16 @@
+{
+ "contact": {
+  "id": "cSam2",
+  "firstName": "Sam",
+  "email": "sam@exampleopt.com",
+  "tags": [
+   "email-reply"
+  ],
+  "customFields": [
+   {
+    "id": "6pUnUwaxqRfQW3q0g2AR",
+    "value": "14"
+   }
+  ]
+ }
+}

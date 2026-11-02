@@ -1,0 +1,16 @@
+{
+ "contact": {
+  "id": "cPat1",
+  "firstName": "Pat",
+  "email": "pat@examplehome.com",
+  "tags": [
+   "email-reply"
+  ],
+  "customFields": [
+   {
+    "id": "6pUnUwaxqRfQW3q0g2AR",
+    "value": "24"
+   }
+  ]
+ }
+}

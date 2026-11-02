@@ -1,0 +1,715 @@
+<title>Surven Copy Checker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Paste a draft and see every place it breaks Surven's copy rules, with the fix.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: one phone-width column. Draft card on top, verdict strip, marked-up text, then the fix list. */
+:root {
+  --cream: #f2eee3;
+  --paper: #faf7ef;
+  --sage: #4e6242;
+  --sage-fill: #829171;
+  --ink: #181b18;
+  --muted: #565b51;
+  --hairline: #c8c1b1;
+  --on-sage: #faf7ef;
+  --block: #97321f;
+  --block-bg: #f3d9cf;
+  --warn: #6f5210;
+  --warn-bg: #f1e3bd;
+  --pass-bg: #dde5d2;
+  --shadow: 8px 8px 0 #4e624229;
+  --f-display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cream: #121512; --paper: #1a1e19; --sage: #a5ba95; --sage-fill: #829171; --ink: #ebe5d5;
+    --muted: #a9ad9f; --hairline: #383f35; --on-sage: #121512; --block: #f0957f; --block-bg: #3b211a;
+    --warn: #e6c36b; --warn-bg: #342b15; --pass-bg: #223020; --shadow: 8px 8px 0 #00000059;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --cream: #121512; --paper: #1a1e19; --sage: #a5ba95; --sage-fill: #829171; --ink: #ebe5d5;
+  --muted: #a9ad9f; --hairline: #383f35; --on-sage: #121512; --block: #f0957f; --block-bg: #3b211a;
+  --warn: #e6c36b; --warn-bg: #342b15; --pass-bg: #223020; --shadow: 8px 8px 0 #00000059;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--cream); color: var(--ink); font: 400 16px/1.5 var(--f-body); }
+.wrap {
+  max-width: 760px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+  display: grid; gap: 18px;
+}
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+h1 { font: 600 clamp(34px, 9vw, 46px)/1.02 var(--f-display); margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+.card { background: var(--paper); border: 1px solid var(--hairline); border-radius: 22px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.card.lift { box-shadow: var(--shadow); }
+.label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0; }
+.seg { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 460px) { .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label {
+  display: block; text-align: center; padding: 10px 6px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--hairline); font-weight: 500; font-size: 15px; background: var(--cream);
+}
+.seg input:checked + label { background: var(--sage); border-color: var(--sage); color: var(--on-sage); }
+.seg input:focus-visible + label { outline: 3px solid var(--sage-fill); outline-offset: 2px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 15px; }
+.opts label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.opts input { width: 18px; height: 18px; accent-color: var(--sage); margin: 0; }
+.draft-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.example-note { font-size: 13px; color: var(--warn); background: var(--warn-bg); border-radius: 12px; padding: 2px 10px; }
+textarea {
+  width: 100%; min-height: 168px; resize: vertical; border-radius: 12px; border: 1px solid var(--hairline);
+  background: var(--cream); color: var(--ink); font: 400 16px/1.5 var(--f-body); padding: 12px;
+}
+textarea:focus-visible { outline: 3px solid var(--sage-fill); outline-offset: 1px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: 500 15px/1 var(--f-body); border-radius: 12px; padding: 11px 16px; cursor: pointer;
+  border: 1px solid var(--sage); background: transparent; color: var(--sage);
+}
+button.primary { background: var(--sage); color: var(--on-sage); }
+button:focus-visible { outline: 3px solid var(--sage-fill); outline-offset: 2px; }
+.toast { font-size: 14px; color: var(--muted); align-self: center; min-height: 1em; }
+
+.verdict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.badge {
+  display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px;
+  font-weight: 700; font-size: 15px; letter-spacing: .02em;
+}
+.badge.pass { background: var(--pass-bg); color: var(--sage); }
+.badge.fail { background: var(--block-bg); color: var(--block); }
+.badge.idle { background: var(--cream); color: var(--muted); border: 1px solid var(--hairline); }
+.counts { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.grade { text-align: right; }
+.grade .num { font: 600 40px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.grade .cap { font-size: 12px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.scale { grid-column: 1 / -1; display: grid; gap: 4px; }
+.track { position: relative; height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--pass-bg) 0 50%, var(--warn-bg) 50% 75%, var(--block-bg) 75% 100%); border: 1px solid var(--hairline); }
+.pin { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--ink); transform: translateX(-2px); }
+.ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.marked {
+  white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.7; margin: 0;
+  background: var(--cream); border-radius: 12px; border: 1px solid var(--hairline); padding: 12px; min-height: 3em;
+}
+.marked .empty { color: var(--muted); }
+mark.hl { color: inherit; border-radius: 4px; padding: 1px 0; cursor: pointer; }
+mark.hl.block { background: var(--block-bg); box-shadow: inset 0 -2px 0 var(--block); }
+mark.hl.warn { background: var(--warn-bg); box-shadow: inset 0 -2px 0 var(--warn); }
+sup.n { font: 700 11px/1 var(--f-body); color: var(--muted); margin-right: 1px; }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { outline: 3px solid var(--sage-fill); } to { outline: 3px solid transparent; } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; outline: 3px solid var(--sage-fill); } }
+
+.group { display: grid; gap: 10px; }
+.group h2 { font: 600 26px/1.1 var(--f-display); margin: 4px 0 0; }
+.issue {
+  display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--cream);
+  border: 1px solid var(--hairline); border-left-width: 6px; cursor: pointer; min-width: 0;
+}
+.issue.block { border-left-color: var(--block); }
+.issue.warn { border-left-color: var(--warn); }
+.issue .top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.issue .num { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.issue .name { font-weight: 700; }
+.issue .where { margin-left: auto; font-size: 13px; color: var(--muted); }
+.issue .quote { font-family: var(--f-mono); font-size: 14px; overflow-wrap: anywhere; color: var(--ink); }
+.issue .msg { color: var(--muted); font-size: 15px; }
+.issue .fix { font-size: 15px; }
+.issue .fix b { color: var(--sage); }
+.allclear { margin: 0; color: var(--sage); font-weight: 500; }
+
+details.rules summary { cursor: pointer; font-weight: 700; }
+.rtable { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-top: 1px solid var(--hairline); }
+th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sev { font-weight: 700; white-space: nowrap; }
+.sev.block { color: var(--block); }
+.sev.warn { color: var(--warn); }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Surven</div>
+    <h1>Copy Checker</h1>
+    <p class="lede">Paste a draft and pick who it is for. Red means fix it before it goes out. Yellow means take a look.</p>
+  </header>
+
+  <section class="card lift" aria-label="Draft">
+    <p class="label" id="ctx-label">Who reads it</p>
+    <div class="seg" role="radiogroup" aria-labelledby="ctx-label">
+      <input type="radio" name="ctx" id="ctx-prospect_email" value="prospect_email"><label for="ctx-prospect_email">Cold email</label>
+      <input type="radio" name="ctx" id="ctx-prospect_sms" value="prospect_sms" checked><label for="ctx-prospect_sms">Cold text</label>
+      <input type="radio" name="ctx" id="ctx-client" value="client"><label for="ctx-client">Client</label>
+      <input type="radio" name="ctx" id="ctx-internal" value="internal"><label for="ctx-internal">Internal</label>
+    </div>
+    <div class="opts">
+      <label><input type="checkbox" id="opt-link"> Needs booking link</label>
+      <label><input type="checkbox" id="opt-optout"> First text (needs STOP line)</label>
+      <label><input type="checkbox" id="opt-template"> Template (merge fields OK)</label>
+    </div>
+    <div class="draft-head">
+      <label class="label" for="draft">Draft</label>
+      <span class="example-note" id="example-note" hidden>Example draft. Paste yours over it.</span>
+    </div>
+    <textarea id="draft" spellcheck="true" autocomplete="off" placeholder="Paste the email or text here"></textarea>
+    <div class="buttons">
+      <button type="button" class="primary" id="btn-copy">Copy text</button>
+      <button type="button" id="btn-clear">Clear</button>
+      <button type="button" id="btn-example">Load example</button>
+      <span class="toast" id="toast" role="status" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Result">
+    <div class="verdict">
+      <div>
+        <span class="badge idle" id="badge">Waiting for a draft</span>
+        <p class="counts" id="counts">Paste a draft above to check it.</p>
+      </div>
+      <div class="grade">
+        <div class="num" id="grade-num">&nbsp;</div>
+        <div class="cap">Reading grade</div>
+      </div>
+      <div class="scale" aria-hidden="true">
+        <div class="track"><div class="pin" id="grade-pin" hidden></div></div>
+        <div class="ticks"><span>0</span><span>3</span><span>6</span><span>9</span><span>12</span></div>
+      </div>
+    </div>
+    <p class="label">Your text, marked</p>
+    <div class="marked" id="marked"><span class="empty">Nothing to mark yet.</span></div>
+  </section>
+
+  <section class="card" aria-label="Fixes" id="fixes">
+    <div class="group" id="g-block"></div>
+    <div class="group" id="g-warn"></div>
+    <p class="allclear" id="allclear" hidden>Nothing to fix. It passes every rule for this kind of message.</p>
+  </section>
+
+  <section class="card">
+    <details class="rules">
+      <summary>All __RULE_COUNT__ rules and where they apply</summary>
+      <div class="rtable"><table id="rules-table"><thead><tr><th>Rule</th><th>What it catches</th><th>Applies to</th><th>Level</th></tr></thead><tbody></tbody></table></div>
+    </details>
+  </section>
+
+  <footer>
+    <div>Same rules the automations run before any draft reaches you (rules version <span id="rules-version"></span>).</div>
+    <div>Last updated __BUILT_AT__</div>
+  </footer>
+</div>
+
+<script id="rules-data" type="application/json">__RULES_JSON__</script>
+
+<script id="checker-js">
+/* CHECKER START */
+/* JavaScript port of tools/copy_check/check.py. Keep the two in step: tests/test_parity.py runs both. */
+(function (root) {
+  "use strict";
+  var CONTEXTS = ["prospect_email", "prospect_sms", "client", "internal"];
+  var ALIASES = {
+    cold_email: "prospect_email", email: "prospect_email", "prospect-email": "prospect_email",
+    cold_text: "prospect_sms", cold_sms: "prospect_sms", sms: "prospect_sms", text: "prospect_sms",
+    "prospect-sms": "prospect_sms", clients: "client", client_facing: "client"
+  };
+  var ABBREV = new Set(["mr", "mrs", "ms", "dr", "st", "jr", "sr", "vs", "etc", "e.g", "i.e", "a.m", "p.m", "inc",
+    "ltd", "co", "approx", "dept", "est", "u.s", "ave", "blvd", "mt", "ft", "sq", "jan", "feb", "apr", "jun",
+    "jul", "aug", "sep", "sept", "oct", "nov", "dec", "mon", "tue", "tues", "thu", "thur", "thurs", "fri"]);
+  var ABBREV_END = new Set(["a.m", "p.m", "etc", "inc", "ltd", "co"]);
+  var WS = " \t\n\r\f\v";
+  var BULLET = /^[ \t]*(?:[-*\u2022]|\d{1,3}[.)])[ \t]+/;
+  var WORD_G = /[A-Za-z]+(?:'[A-Za-z]+)*/g;
+  var WORD_1 = /[A-Za-z]+(?:'[A-Za-z]+)*/;
+  var LINKS = /https?:\/\/\S+|www\.\S+|[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,4}|\b[A-Za-z0-9][\w-]{0,62}(?:\.[\w-]{1,63}){0,4}\.(?:com|net|org|ai|io|co|us|info|biz|app)\b(?:[\/?#]\S*)?/gi;
+  var PUNCT_END = [",", ".", ";", ":", "!", "?"];
+  var cache = new Map();
+
+  function rxg(src, flags) {
+    var k = "g" + flags + "\u0000" + src;
+    if (!cache.has(k)) cache.set(k, new RegExp(src, (flags.indexOf("i") >= 0 ? "i" : "") + "g"));
+    var r = cache.get(k); r.lastIndex = 0; return r;
+  }
+  function rx1(src, flags) {
+    var k = "1" + flags + "\u0000" + src;
+    if (!cache.has(k)) cache.set(k, new RegExp(src, flags.indexOf("i") >= 0 ? "i" : ""));
+    return cache.get(k);
+  }
+  function full(src, flags) {
+    var k = "f" + flags + "\u0000" + src;
+    if (!cache.has(k)) cache.set(k, new RegExp("^(?:" + src + ")$", flags.indexOf("i") >= 0 ? "i" : ""));
+    return cache.get(k);
+  }
+  function isWs(ch) { return ch !== "" && WS.indexOf(ch) >= 0; }
+  function stripWs(s) {
+    var a = 0, b = s.length;
+    while (a < b && isWs(s.charAt(a))) a++;
+    while (b > a && isWs(s.charAt(b - 1))) b--;
+    return s.slice(a, b);
+  }
+  function rstripWs(s) { var b = s.length; while (b > 0 && isWs(s.charAt(b - 1))) b--; return s.slice(0, b); }
+  function leadWs(s) { var a = 0; while (a < s.length && isWs(s.charAt(a))) a++; return a; }
+  function isAlnum(ch) { return /^[A-Za-z0-9]$/.test(ch); }
+
+  function resolveContext(c) {
+    var x = String(c || "").trim().toLowerCase();
+    x = ALIASES[x] || x;
+    if (CONTEXTS.indexOf(x) < 0) throw new Error("unknown context " + c);
+    return x;
+  }
+  function normalize(t) {
+    return t.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+      .replace(/[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, " ")
+      .replace(/[\u2028\u2029]/g, "\n").replace(/\ufeff/g, "");
+  }
+  function straighten(t) { return t.replace(/[\u2018\u2019\u02bc]/g, "'").replace(/[\u201c\u201d]/g, "\""); }
+
+  function nextIsUpper(seg, i) {
+    while (i < seg.length && isWs(seg.charAt(i))) i++;
+    var c = seg.charAt(i);
+    return i < seg.length && c >= "A" && c <= "Z";
+  }
+  function blankLinks(t) { return t.replace(LINKS, function (m) { return " ".repeat(m.length); }); }
+  function addSpan(spans, text, s, e) {
+    while (s < e && isWs(text.charAt(s))) s++;
+    while (e > s && isWs(text.charAt(e - 1))) e--;
+    if (e > s) spans.push([s, e]);
+  }
+  function splitSentences(text) {
+    var blocks = [], cur = null, pos = 0, lines = text.split("\n");
+    for (var li = 0; li < lines.length; li++) {
+      var line = lines[li], ls = pos, le = pos + line.length;
+      pos = le + 1;
+      if (stripWs(line) === "") { cur = null; continue; }
+      var m = BULLET.exec(line);
+      if (m) { cur = [ls + m[0].length, le]; blocks.push(cur); continue; }
+      var start = ls + leadWs(line);
+      if (cur !== null) {
+        var prev = rstripWs(text.slice(cur[0], cur[1]));
+        var f = text.charAt(start);
+        if (prev && isAlnum(prev.charAt(prev.length - 1)) && f >= "a" && f <= "z") { cur[1] = le; continue; }
+      }
+      cur = [start, le];
+      blocks.push(cur);
+    }
+    var spans = [];
+    blocks.forEach(function (b) {
+      var bs = b[0], be = b[1], seg = text.slice(bs, be), s0 = 0, mm;
+      var term = /[.!?]+["')\]*_`]*(?![^\s])/g;
+      while ((mm = term.exec(seg)) !== null) {
+        var punct = mm[0].replace(/["')\]*_`]+$/, "");
+        if (punct.length >= 2 && /^\.+$/.test(punct)) continue;
+        if (punct === ".") {
+          var parts = seg.slice(0, mm.index).split(/\s/);
+          var tok = parts[parts.length - 1].replace(/^[(\["']+/, "");
+          if (ABBREV.has(tok.toLowerCase()) || /^[A-Z]$/.test(tok)) {
+            if (!(ABBREV_END.has(tok.toLowerCase()) && nextIsUpper(seg, mm.index + mm[0].length))) continue;
+          }
+        }
+        addSpan(spans, text, bs + s0, bs + mm.index + mm[0].length);
+        s0 = mm.index + mm[0].length;
+      }
+      addSpan(spans, text, bs + s0, be);
+    });
+    return spans;
+  }
+  function sentenceWords(s) {
+    return s.split(/[ \t\n\r\f\v]+/).filter(function (t) { return /[A-Za-z0-9]/.test(t); });
+  }
+  function countWords(s) {
+    var toks = sentenceWords(s), n = 0, prevCap = false;
+    for (var k = 0; k < toks.length; k++) {
+      var t = toks[k], core = t.replace(/^["'(\[]+/, "");
+      var c0 = core.charAt(0);
+      var cap = k > 0 && core !== "" && c0 >= "A" && c0 <= "Z";
+      if (!(cap && prevCap)) n++;
+      var last = t.replace(/["')\]]+$/, "").slice(-1);
+      prevCap = cap && PUNCT_END.indexOf(last) < 0;
+    }
+    return n;
+  }
+  function isProper(text, s, e) {
+    var m = text.slice(s, e), c0 = m.charAt(0);
+    if (!m || !(c0 >= "A" && c0 <= "Z") || !/[a-z]/.test(m)) return false;
+    var ls = s > 0 ? text.lastIndexOf("\n", s - 1) + 1 : 0;
+    if (!/[A-Za-z]/.test(text.slice(ls, s))) return false;
+    var i = s - 1;
+    while (i >= 0 && " \t\"'([".indexOf(text.charAt(i)) >= 0) i--;
+    return ".!?".indexOf(text.charAt(i)) < 0;
+  }
+  function syllables(word) {
+    var w = word.toLowerCase().replace(/'/g, "");
+    if (w.length <= 3) return 1;
+    w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, "").replace(/^y/, "");
+    var m = w.match(/[aeiouy]{1,2}/g);
+    return Math.max(1, m ? m.length : 0);
+  }
+  function readingGrade(plain, spans) {
+    var text = blankLinks(plain);
+    var words = text.match(WORD_G) || [];
+    if (!words.length) return [null, 0];
+    var sents = 0;
+    spans.forEach(function (sp) { if (WORD_1.test(text.slice(sp[0], sp[1]))) sents++; });
+    sents = Math.max(sents, 1);
+    var syl = 0;
+    words.forEach(function (w) { syl += syllables(w); });
+    var g = 0.39 * (words.length / sents) + 11.8 * (syl / words.length) - 15.59;
+    g = Math.floor(g * 10 + 0.5) / 10;
+    return [g > 0 ? g : 0, words.length];
+  }
+
+  function regexHits(rule, text, template) {
+    var hits = [];
+    rule._res.forEach(function (p) {
+      var r = rxg(p.re, p.flags), m;
+      while ((m = r.exec(text)) !== null) {
+        if (m[0].length === 0) { r.lastIndex++; continue; }
+        hits.push([m.index, m.index + m[0].length]);
+      }
+    });
+    hits.sort(function (a, b) { return (a[0] - b[0]) || ((b[1] - b[0]) - (a[1] - a[0])); });
+    var kept = [], maxEnd = -1;
+    hits.forEach(function (h) {
+      if (h[1] <= maxEnd) return;
+      kept.push(h); maxEnd = h[1];
+    });
+    if (template && rule.template_ok) {
+      var ok = [], r2 = rxg(rule.template_ok, "i"), m2;
+      while ((m2 = r2.exec(text)) !== null) {
+        if (m2[0].length === 0) { r2.lastIndex++; continue; }
+        ok.push([m2.index, m2.index + m2[0].length]);
+      }
+      kept = kept.filter(function (h) { return !ok.some(function (o) { return o[0] <= h[0] && h[1] <= o[1]; }); });
+    }
+    (rule.skip_if || []).forEach(function (sk) {
+      var f = full(sk.pattern, sk.flags === undefined ? "i" : sk.flags);
+      kept = kept.filter(function (h) { return !f.test(text.slice(h[0], h[1])); });
+    });
+    if (rule.skip_proper) kept = kept.filter(function (h) { return !isProper(text, h[0], h[1]); });
+    if (rule.before) {
+      var bf = full(rule.before, "");
+      kept = kept.filter(function (h) { return h[0] === 0 || bf.test(text.charAt(h[0] - 1)); });
+    }
+    return kept;
+  }
+  function fixFor(rule, matched) {
+    var use = null;
+    if (rule.kind === "wordlist") {
+      for (var i = 0; i < rule._entries.length; i++) {
+        var e = rule._entries[i];
+        if (e.use && full(e.re, "i").test(matched)) { use = e.use; break; }
+      }
+    } else if (rule.suggest) {
+      use = matched.replace(new RegExp(rule.suggest[0], "i"), rule.suggest[1]);
+    }
+    if (use && rule.fix_use) return rule.fix_use.split("{use}").join(use);
+    return rule.fix;
+  }
+  function codepoints(s) {
+    var out = [];
+    for (var i = 0; i < s.length;) {
+      var cp = s.codePointAt(i), n = cp > 0xffff ? 2 : 1;
+      out.push([i, cp, s.slice(i, i + n)]);
+      i += n;
+    }
+    return out;
+  }
+  function metricHits(rule, norm, plain, spans, grade, nwords, opts) {
+    var m = rule.metric, out = [];
+    if (m === "emoji") {
+      var ranges = rule.ranges.map(function (r) { return [parseInt(r[0], 16), parseInt(r[1], 16)]; });
+      var inR = function (cp) { return ranges.some(function (r) { return r[0] <= cp && cp <= r[1]; }); };
+      var cps = codepoints(norm), k = 0;
+      while (k < cps.length) {
+        if (inR(cps[k][1])) {
+          var j = k;
+          while (j < cps.length && inR(cps[j][1])) j++;
+          var s = cps[k][0], e = j < cps.length ? cps[j][0] : norm.length;
+          out.push([s, e, norm.slice(s, e)]);
+          k = j;
+        } else k++;
+      }
+    } else if (m === "lowercase_start") {
+      spans.forEach(function (sp) {
+        var i = sp[0], e = sp[1];
+        while (i < e && "\"'([".indexOf(plain.charAt(i)) >= 0) i++;
+        if (i >= e) return;
+        var c = plain.charAt(i);
+        if (!(c >= "a" && c <= "z")) return;
+        var j = i;
+        while (j < e && !isWs(plain.charAt(j))) j++;
+        var tok = plain.slice(i, j);
+        if (tok.indexOf("://") >= 0 || tok.indexOf("www.") === 0 || tok.indexOf("@") >= 0 ||
+            /^[a-z0-9-]+\.[a-z]{2,}/.test(tok) || /[A-Z]/.test(tok.slice(1))) return;
+        out.push([i, j, norm.slice(i, j)]);
+      });
+    } else if (m === "sentence_words") {
+      spans.forEach(function (sp) {
+        if (countWords(plain.slice(sp[0], sp[1])) > rule.max) out.push([sp[0], sp[1], norm.slice(sp[0], sp[1])]);
+      });
+    } else if (m === "question_words") {
+      spans.forEach(function (sp) {
+        var sent = plain.slice(sp[0], sp[1]);
+        var tailParts = sent.split(",");
+        if (/\?$/.test(sent.replace(/["')\]]+$/, "")) && countWords(tailParts[tailParts.length - 1]) > rule.max) {
+          out.push([sp[0], sp[1], norm.slice(sp[0], sp[1])]);
+        }
+      });
+    } else if (m === "reading_grade") {
+      if (grade !== null && nwords >= (rule.min_words || 0) && grade > rule.max) {
+        out.push([null, null, "grade " + grade.toFixed(1)]);
+      }
+    } else if (m === "question_marks") {
+      var qs = [], bare = blankLinks(plain);
+      for (var q = 0; q < bare.length; q++) if (bare.charAt(q) === "?") qs.push(q);
+      if (qs.length > rule.max) out.push([qs[rule.max], qs[rule.max] + 1, qs.length + " questions"]);
+    } else if (m === "char_count") {
+      var n = Array.from(stripWs(norm)).length;
+      if (n > rule.max) out.push([null, null, n + " characters"]);
+    } else if (m === "non_gsm") {
+      var allowed = new Set(Array.from(rule.charset)), seen = [], first = null;
+      codepoints(norm).forEach(function (c) {
+        if (!allowed.has(c[2]) && c[2] !== "\n") {
+          if (first === null) first = c[0];
+          if (seen.indexOf(c[2]) < 0) seen.push(c[2]);
+        }
+      });
+      if (seen.length) out.push([first, first + seen[0].length, seen.join(" ")]);
+    } else if (m === "require_link" || m === "require_optout") {
+      if (opts[rule.flag || m] && !rx1(rule.pattern, "i").test(plain)) out.push([null, null, ""]);
+    }
+    return out;
+  }
+  function lineStarts(t) {
+    var a = [0];
+    for (var i = 0; i < t.length; i++) if (t.charCodeAt(i) === 10) a.push(i + 1);
+    return a;
+  }
+  function mkIssue(rule, idx, sev, s, e, matched, starts, fix) {
+    var line = 0, col = 0;
+    if (s !== null) {
+      var lo = 0, hi = starts.length - 1;
+      while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (starts[mid] <= s) lo = mid; else hi = mid - 1; }
+      line = lo + 1; col = s - starts[lo] + 1;
+    }
+    return { rule: rule.id, label: rule.label || rule.id, severity: sev, match: matched, line: line, col: col,
+             message: rule.message, fix: fix, start: s, end: e, _idx: idx };
+  }
+
+  function check(comp, text, context, opts) {
+    opts = opts || {};
+    var ctx = resolveContext(context);
+    var norm = normalize(String(text || "")), plain = straighten(norm);
+    var spans = splitSentences(plain);
+    var starts = lineStarts(norm);
+    var gr = readingGrade(plain, spans), grade = gr[0], nwords = gr[1];
+    var flags = { require_link: !!opts.require_link, require_optout: !!opts.require_optout };
+    var issues = [];
+    comp.rules.forEach(function (rule, idx) {
+      if (rule.contexts.indexOf(ctx) < 0) return;
+      var sev = (rule.severity_by_context || {})[ctx] || rule.severity;
+      if (rule.kind === "regex" || rule.kind === "wordlist") {
+        var src = rule.on === "raw" ? norm : plain, allow = rule._allow || [];
+        regexHits(rule, src, !!opts.template).forEach(function (h) {
+          var matched = norm.slice(h[0], h[1]);
+          if (allow.indexOf(stripWs(matched).toLowerCase()) >= 0) return;
+          issues.push(mkIssue(rule, idx, sev, h[0], h[1], matched, starts, fixFor(rule, plain.slice(h[0], h[1]))));
+        });
+      } else {
+        metricHits(rule, norm, plain, spans, grade, nwords, flags).forEach(function (h) {
+          issues.push(mkIssue(rule, idx, sev, h[0], h[1], h[2], starts, rule.fix));
+        });
+      }
+    });
+    var fired = new Set(issues.map(function (i) { return i.rule; }));
+    var drop = new Set(comp.rules.filter(function (r) { return r.suppressed_by && fired.has(r.suppressed_by); })
+      .map(function (r) { return r.id; }));
+    issues = issues.filter(function (i) { return !drop.has(i.rule); });
+    issues.sort(function (a, b) {
+      var wa = a.start === null ? 1 : 0, wb = b.start === null ? 1 : 0;
+      return (wa - wb) || ((a.start || 0) - (b.start || 0)) || (a._idx - b._idx);
+    });
+    issues.forEach(function (i) { delete i._idx; });
+    var nblock = issues.filter(function (i) { return i.severity === "block"; }).length;
+    return { ok: nblock === 0, grade: grade, context: ctx, counts: { block: nblock, warn: issues.length - nblock },
+             issues: issues, text: norm };
+  }
+
+  root.SurvenCopyCheck = { check: check, normalize: normalize, splitSentences: splitSentences,
+                           syllables: syllables, readingGrade: readingGrade, countWords: countWords };
+})(typeof globalThis !== "undefined" ? globalThis : this);
+/* CHECKER END */
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var RULES = JSON.parse(document.getElementById("rules-data").textContent);
+  var C = window.SurvenCopyCheck;
+  var KEY = "surven-copy-checker.v1";
+  var EXAMPLE = "hi Pat, hope you're doing well! I looked at your care home's score \u2014 our clients see " +
+    "3x more tours. Is now a bad time to talk? It's only $500/mo. Reply STOP to opt out.";
+  var $ = function (id) { return document.getElementById(id); };
+  var draft = $("draft"), exampleOn = false, timer = null, last = null;
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function ctx() { var r = document.querySelector("input[name=ctx]:checked"); return r ? r.value : "prospect_sms"; }
+  function opts() {
+    return { require_link: $("opt-link").checked, require_optout: $("opt-optout").checked,
+             template: $("opt-template").checked };
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ ctx: ctx(), draft: exampleOn ? "" : draft.value,
+        link: $("opt-link").checked, optout: $("opt-optout").checked, template: $("opt-template").checked }));
+    } catch (e) { /* storage blocked: fine */ }
+  }
+  function restore() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!s) return false;
+      var r = $("ctx-" + s.ctx); if (r) r.checked = true;
+      $("opt-link").checked = !!s.link; $("opt-optout").checked = !!s.optout; $("opt-template").checked = !!s.template;
+      if (s.draft) { draft.value = s.draft; return true; }
+    } catch (e) { /* ignore */ }
+    return false;
+  }
+  function loadExample() {
+    draft.value = EXAMPLE; exampleOn = true; $("example-note").hidden = false;
+    $("ctx-prospect_sms").checked = true; run();
+  }
+  function toast(msg) { $("toast").textContent = msg; setTimeout(function () { $("toast").textContent = ""; }, 2200); }
+
+  function renderMarked(text, issues) {
+    var box = $("marked");
+    if (!text.trim()) { box.innerHTML = '<span class="empty">Nothing to mark yet.</span>'; return; }
+    var spans = [];
+    issues.forEach(function (it, k) { if (it.start !== null && it.end > it.start) spans.push({ s: it.start, e: it.end, k: k, sev: it.severity }); });
+    var pts = [0, text.length];
+    spans.forEach(function (sp) { pts.push(sp.s, sp.e); });
+    pts = Array.from(new Set(pts)).sort(function (a, b) { return a - b; });
+    var html = "", firstSeen = {};
+    for (var p = 0; p < pts.length - 1; p++) {
+      var a = pts[p], b = pts[p + 1], piece = esc(text.slice(a, b));
+      var cover = spans.filter(function (sp) { return sp.s <= a && sp.e >= b; });
+      spans.forEach(function (sp) { if (sp.s === a) html += '<sup class="n">' + (sp.k + 1) + "</sup>"; });
+      if (!cover.length) { html += piece; continue; }
+      var sev = cover.some(function (c) { return c.sev === "block"; }) ? "block" : "warn";
+      var ids = cover.map(function (c) { return c.k; });
+      var idAttr = "";
+      ids.forEach(function (k) { if (!firstSeen[k]) { firstSeen[k] = true; if (!idAttr) idAttr = ' id="m-' + k + '"'; } });
+      html += '<mark class="hl ' + sev + '"' + idAttr + ' data-ids="' + ids.join(",") + '">' + piece + "</mark>";
+    }
+    box.innerHTML = html;
+  }
+  function issueCard(it, k) {
+    var where = it.line ? "line " + it.line : "whole text";
+    var quote = it.match ? '<div class="quote">\u201c' + esc(it.match.length > 160 ? it.match.slice(0, 157) + "..." : it.match) + "\u201d</div>" : "";
+    return '<div class="issue ' + it.severity + '" id="i-' + k + '" data-k="' + k + '" tabindex="0">' +
+      '<div class="top"><span class="num">' + (k + 1) + '</span><span class="name">' + esc(it.label) + "</span>" +
+      '<span class="where">' + where + "</span></div>" + quote +
+      '<div class="msg">' + esc(it.message) + "</div>" +
+      '<div class="fix"><b>Fix:</b> ' + esc(it.fix) + "</div></div>";
+  }
+  function renderIssues(res) {
+    var blocks = [], warns = [];
+    res.issues.forEach(function (it, k) { (it.severity === "block" ? blocks : warns).push(issueCard(it, k)); });
+    $("g-block").innerHTML = blocks.length ? "<h2>Must fix (" + blocks.length + ")</h2>" + blocks.join("") : "";
+    $("g-warn").innerHTML = warns.length ? "<h2>Take a look (" + warns.length + ")</h2>" + warns.join("") : "";
+    $("allclear").hidden = !!res.issues.length || !draft.value.trim();
+  }
+  function renderVerdict(res) {
+    var badge = $("badge"), empty = !draft.value.trim();
+    if (empty) {
+      badge.className = "badge idle"; badge.textContent = "Waiting for a draft";
+      $("counts").textContent = "Paste a draft above to check it.";
+    } else if (res.ok) {
+      badge.className = "badge pass"; badge.textContent = "PASS";
+      $("counts").textContent = res.counts.warn ? "Ready to use. " + res.counts.warn + " thing" + (res.counts.warn > 1 ? "s" : "") + " to look at." : "Ready to use.";
+    } else {
+      badge.className = "badge fail"; badge.textContent = "FIX FIRST";
+      $("counts").textContent = res.counts.block + " must fix, " + res.counts.warn + " to look at.";
+    }
+    var g = res.grade, pin = $("grade-pin");
+    if (g === null || empty) { $("grade-num").innerHTML = "&nbsp;"; pin.hidden = true; }
+    else {
+      $("grade-num").textContent = g.toFixed(1);
+      pin.hidden = false; pin.style.left = Math.min(100, g / 12 * 100) + "%";
+    }
+  }
+  function run() {
+    var res = C.check(RULES, draft.value, ctx(), opts());
+    last = res;
+    renderVerdict(res); renderMarked(res.text, res.issues); renderIssues(res);
+    save();
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(run, 120); }
+  function flash(el) {
+    if (!el) return;
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  }
+
+  draft.addEventListener("input", function () {
+    if (exampleOn) { exampleOn = false; $("example-note").hidden = true; }
+    schedule();
+  });
+  document.querySelectorAll("input[name=ctx], .opts input").forEach(function (el) { el.addEventListener("change", run); });
+  $("marked").addEventListener("click", function (ev) {
+    var m = ev.target.closest("mark.hl"); if (!m) return;
+    flash($("i-" + m.getAttribute("data-ids").split(",")[0]));
+  });
+  $("fixes").addEventListener("click", function (ev) {
+    var c = ev.target.closest(".issue"); if (!c) return;
+    flash($("m-" + c.getAttribute("data-k")));
+  });
+  $("fixes").addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter") return;
+    var c = ev.target.closest(".issue"); if (c) flash($("m-" + c.getAttribute("data-k")));
+  });
+  $("btn-copy").addEventListener("click", function () {
+    var text = draft.value;
+    var fallback = function () { draft.focus(); draft.select(); toast("Selected. Press copy on your phone or Ctrl+C."); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast("Copied."); }, fallback);
+    } else fallback();
+  });
+  $("btn-clear").addEventListener("click", function () {
+    draft.value = ""; exampleOn = false; $("example-note").hidden = true; run(); draft.focus();
+  });
+  $("btn-example").addEventListener("click", loadExample);
+
+  var tbody = document.querySelector("#rules-table tbody"), rows = "";
+  RULES.rules.forEach(function (r) {
+    var where = r.contexts.map(function (c) { return RULES.contexts[c]; }).join(", ");
+    var lvl = r.severity === "block" ? "Must fix" : "Look at";
+    if (r.severity_by_context) {
+      Object.keys(r.severity_by_context).forEach(function (c) {
+        lvl += " (" + RULES.contexts[c] + ": " + (r.severity_by_context[c] === "block" ? "must fix" : "look at") + ")";
+      });
+    }
+    if (r.flag) where += ". Only when " + (r.flag === "require_link" ? "Needs booking link" : "First text") + " is ticked";
+    rows += "<tr><td><b>" + esc(r.label || r.id) + "</b></td><td>" + esc(r.message) + "</td><td>" + esc(where) +
+      '</td><td class="sev ' + r.severity + '">' + esc(lvl) + "</td></tr>";
+  });
+  tbody.innerHTML = rows;
+  $("rules-version").textContent = RULES.version;
+
+  if (!restore()) loadExample(); else run();
+})();
+</script>

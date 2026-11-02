@@ -1,0 +1,29 @@
+{
+ "opportunities": [
+  {
+   "id": "o1",
+   "contactId": "cPat1",
+   "pipelineId": "D26Fys9N44CiadqYjkm7",
+   "pipelineStageId": "sReplied",
+   "status": "open",
+   "updatedAt": "2026-11-01T12:00:00Z"
+  },
+  {
+   "id": "o2",
+   "contactId": "cSam2",
+   "pipelineId": "D26Fys9N44CiadqYjkm7",
+   "pipelineStageId": "sReplied",
+   "status": "open",
+   "updatedAt": "2026-10-29T12:00:00Z"
+  },
+  {
+   "id": "o3",
+   "contactId": "cChris3",
+   "pipelineId": "D26Fys9N44CiadqYjkm7",
+   "pipelineStageId": "sTalked",
+   "status": "open",
+   "updatedAt": "2026-10-30T12:00:00Z"
+  }
+ ],
+ "meta": {}
+}

@@ -1,0 +1,35 @@
+{
+ "contact": {
+  "id": "cPat0001",
+  "firstName": "Pat",
+  "lastName": "Example",
+  "companyName": "Maple Example House",
+  "email": "pat@example.com",
+  "city": "Sampletown",
+  "state": "TX",
+  "website": "https://maple.example.com",
+  "source": "cold email",
+  "dateAdded": "2026-10-20T12:00:00Z",
+  "tags": [
+   "email-reply"
+  ],
+  "customFields": [
+   {
+    "id": "fBeds",
+    "value": "12"
+   },
+   {
+    "id": "fType",
+    "value": "Assisted Living"
+   },
+   {
+    "id": "6pUnUwaxqRfQW3q0g2AR",
+    "value": "E99"
+   },
+   {
+    "id": "fAgent",
+    "value": "planner text"
+   }
+  ]
+ }
+}

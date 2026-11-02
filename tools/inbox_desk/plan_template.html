@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$title_text</title>
+<style>
+  :root { --cream:#f2eee3; --paper:#faf7ef; --sage:#4e6242; --ink:#181b18; --hair:#c8c1b1; --muted:#5b5f57; }
+  @page { size: Letter; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 11pt; line-height: 1.45; }
+  .page { width: 8.5in; min-height: 11in; margin: 0 auto; background: var(--paper); display: flex; flex-direction: column; }
+  main { flex: 1; }
+  header { background: var(--sage); color: var(--cream); padding: 0.45in 0.6in 0.35in; }
+  header .brand { font-size: 9pt; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.85; margin: 0 0 6pt; }
+  header h1 { font-size: 21pt; line-height: 1.15; margin: 0 0 6pt; font-weight: 700; }
+  header .sub { font-size: 10.5pt; margin: 0; opacity: 0.9; }
+  main { padding: 0.3in 0.6in 0.2in; }
+  .intro { margin: 0 0 14pt; }
+  h2 { font-size: 10pt; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sage); margin: 16pt 0 6pt;
+    padding-bottom: 4pt; border-bottom: 0.75pt solid var(--hair); }
+  .facts { width: 100%; border-collapse: collapse; }
+  .facts td { padding: 3pt 0; vertical-align: top; }
+  .facts td.k { width: 1.6in; color: var(--muted); }
+  .facts .src { font-size: 8.5pt; color: var(--muted); }
+  .facts .src a { color: var(--sage); }
+  ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 10pt 0.42in; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 0.28in; height: 0.28in;
+    border-radius: 50%; background: var(--sage); color: var(--cream); font-weight: 700; text-align: center;
+    line-height: 0.28in; font-size: 10pt; }
+  ol.steps b { display: block; margin-bottom: 2pt; }
+  .timeline { color: var(--muted); font-size: 10pt; margin: 2pt 0 0; }
+  .try { background: var(--cream); border: 0.75pt solid var(--hair); border-radius: 6pt; padding: 10pt 12pt; }
+  .ask { margin-top: 18pt; border-top: 0.75pt solid var(--hair); padding-top: 12pt; }
+  .ask .q { font-weight: 700; font-size: 13pt; margin: 0 0 4pt; }
+  .ask a { color: var(--sage); font-weight: 700; word-break: break-all; }
+  .sign { margin-top: 10pt; color: var(--muted); }
+  footer { padding: 0 0.6in 0.4in; font-size: 8.5pt; color: var(--muted); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-print]) { --paper:#181b18; --ink:#f2eee3; --cream:#23281f; --hair:#3b4136; --muted:#b8b3a6; }
+    :root:not([data-print]) header { color: #f2eee3; }
+    :root:not([data-print]) ol.steps li::before { color: #f2eee3; }
+  }
+  @media print { html, body, .page { background: #faf7ef !important; color: #181b18 !important; }
+    .page { height: 11in; min-height: 0; overflow: hidden; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="brand">Surven</p>
+    <h1>$title_html</h1>
+    <p class="sub">$sub_html</p>
+  </header>
+  <main>
+    <p class="intro">$intro_html</p>
+    $facts_html
+    <h2>What we would set up in your first 90 days</h2>
+    <ol class="steps">
+      $steps_html
+    </ol>
+    <p class="timeline">$timeline_html</p>
+    <h2>$try_title_html</h2>
+    <div class="try">$try_html</div>
+    <div class="ask">
+      <p class="q">$ask_html</p>
+      <p>$book_html</p>
+      <p class="sign">$sign_html</p>
+    </div>
+  </main>
+  <footer>$footer_html</footer>
+</div>
+</body>
+</html>

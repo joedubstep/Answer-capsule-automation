@@ -1,0 +1,13 @@
+{
+ "contacts": [
+  {
+   "id": "cPat0001",
+   "firstName": "Pat",
+   "lastName": "Example",
+   "companyName": "Maple Example House",
+   "email": "pat@example.com",
+   "dateAdded": "2026-10-20T15:00:00Z",
+   "tags": ["email reply"]
+  }
+ ]
+}

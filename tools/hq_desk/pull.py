@@ -71,20 +71,28 @@ def slim_message(m):
     return d
 
 
+AUTO_SOURCES = {"workflow", "campaign", "bulk_actions", "bulk_action", "drip", "automation", "trigger"}
+
+
 def slim_messages(raw_msgs):
-    """Newest first. Keeps text only for the newest few inbound and outbound real messages."""
-    out, n_in, n_out = [], 0, 0
-    for m in raw_msgs:
+    """Newest first. Keeps text only for the newest few inbound messages, the newest few of Joey's own outbound
+    messages, and the newest automated one (so a run of workflow texts never hides what Joey last wrote)."""
+    out, n_in, n_out, n_auto = [], 0, 0, 0
+    for m in sorted(raw_msgs or [], key=lambda x: str(x.get("dateAdded") or ""), reverse=True):
         d = slim_message(m)
         real = d["type"] and not d["type"].startswith("TYPE_ACTIVITY")
         body = m.get("body")
-        if real and body and d["type"] not in ("TYPE_CALL", "TYPE_CAMPAIGN_CALL"):
+        if real and body and d["type"] not in ("TYPE_CALL", "TYPE_CAMPAIGN_CALL", "TYPE_IVR_CALL"):
+            auto = str(d.get("source") or "").strip().lower() in AUTO_SOURCES
             if d["dir"] == "inbound" and n_in < KEEP_IN_BODIES:
                 d["text"] = clean_body(body)
                 n_in += 1
-            elif d["dir"] == "outbound" and n_out < KEEP_OUT_BODIES:
+            elif d["dir"] == "outbound" and not auto and n_out < KEEP_OUT_BODIES:
                 d["text"] = clean_body(body)
                 n_out += 1
+            elif d["dir"] == "outbound" and auto and n_auto < 1:
+                d["text"] = clean_body(body)
+                n_auto += 1
         out.append(d)
     out.sort(key=lambda x: str(x.get("when") or ""), reverse=True)
     return out
@@ -258,11 +266,11 @@ def pull(p, now=None, max_deals=150, msg_limit=MSG_LIMIT, workers=WORKERS, log=N
     return raw
 
 
-def write_json(path, obj):
+def write_json(path, obj, indent=1):
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=1)
+        json.dump(obj, f, ensure_ascii=False, indent=indent)
     os.replace(tmp, path)
 
 

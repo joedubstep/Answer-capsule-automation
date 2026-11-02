@@ -1,0 +1,42 @@
+--- a/occupancy_os/collectors/agc.py
++++ b/occupancy_os/collectors/agc.py
+@@ -38,7 +38,7 @@
+ import urllib.parse
+ from datetime import date, datetime, timedelta, timezone
+ 
+-VERSION = '2026-10-01.1'
++VERSION = '2026-11-02.1'
+ LOC = 'ySKGXQBLqevOlFCmV1Wo'
+ TOUR_CAL = 'uQEkJzpLsRP579RqHeXV'
+ PIPELINE = 'XfVVFzt8CXRnTtc9PRq5'
+@@ -290,7 +290,20 @@
+     return None
+ 
+ 
++def is_referral_partner(c):
++    """Referral partners are hospital desks, social workers and agencies the home calls, not families
++    (clients/american-golden-care/rules.md). Signs: the tag referral-partner, any partner-* type tag from the partner
++    import, or the planner's own "partner: <stage>" Agent Stage. They stay in the reply-code list (internal_reason
++    does not drop them), so no family's code moves; they only leave families.csv for excluded.csv."""
++    tags = [str(t).lower() for t in c.get('tags') or []]
++    if 'referral-partner' in tags or any(t.startswith('partner-') for t in tags):
++        return True
++    return bool(re.match(r'^partner\s*:', field(c, F_STAGE).strip(), re.I))
++
++
+ def not_family_reason(c):
++    if is_referral_partner(c):
++        return 'referral_partner'
+     stage = field(c, F_STAGE).strip()
+     if re.match(r'^not a family\b', stage, re.I):
+         why = stage.lower()
+@@ -548,7 +561,8 @@
+             'source': 'GoHighLevel AGC sub-account (read only)',
+             'source_url': 'https://app.gohighlevel.com/v2/location/%s/contacts/smart_list/All' % LOC,
+             'rules': {
+-                'family': 'every contact minus the listener exclusion list (lib/account.js agc), minus Agent Stage '
++                'family': 'every contact minus the listener exclusion list (lib/account.js agc), minus referral partners '
++                          '(tag referral-partner or partner-*, or Agent Stage "partner:"), minus Agent Stage '
+                           '"not a family", minus SVN Call Outcome Not Qualified or Wrong Number, minus website job inquiries',
+                 'pending': 'kept, but the planner has not judged it yet (blank Agent Stage)',
+                 'reached': 'a completed call of 60 s or more either way, or a two-way text, or a two-way email',

@@ -1,0 +1,196 @@
+{
+ "primary": {
+  "accessRole": "owner",
+  "events": [
+   {
+    "id": "p1",
+    "summary": "wake ",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T05:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T05:15:00-05:00",
+     "timeZone": "America/New_York"
+    }
+   },
+   {
+    "id": "p2",
+    "summary": "Discovery Call | Joey x Pat Example",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T10:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T10:45:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "attendees": [
+     {
+      "email": "owner@surven.ai",
+      "self": true,
+      "responseStatus": "accepted"
+     },
+     {
+      "email": "pat@example.com",
+      "displayName": "Pat Example",
+      "responseStatus": "accepted"
+     }
+    ],
+    "description": "Discovery call booked from the website."
+   },
+   {
+    "id": "p3",
+    "summary": "Joey Host and Casey Coach",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T13:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T13:30:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "attendees": [
+     {
+      "email": "casey@coach.example.org",
+      "organizer": true,
+      "responseStatus": "accepted"
+     },
+     {
+      "email": "owner@surven.ai",
+      "self": true,
+      "responseStatus": "accepted"
+     }
+    ],
+    "description": "Event Name\nSample (LS) Client Call\n\n1-1 Call with Account Manager to support your campaign.",
+    "conferenceUrl": "https://meet.google.com/xyz-abcd-efg"
+   },
+   {
+    "id": "p4",
+    "summary": "Weekly Group Coaching Call for Students",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T14:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T15:00:00-05:00",
+     "timeZone": "America/New_York"
+    }
+   },
+   {
+    "id": "p5",
+    "summary": "Joey Host and Morgan Buyer",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T15:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T15:30:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "attendees": [
+     {
+      "email": "morgan@vendor.example",
+      "organizer": true,
+      "responseStatus": "accepted"
+     },
+     {
+      "email": "owner@surven.ai",
+      "self": true,
+      "responseStatus": "accepted"
+     }
+    ],
+    "location": "https://us06web.zoom.us/j/12345678901",
+    "description": "30 Minute Meeting. Powered by Calendly.com"
+   },
+   {
+    "id": "p6",
+    "summary": "Sales Iterations",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T17:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T18:00:00-05:00",
+     "timeZone": "America/New_York"
+    }
+   },
+   {
+    "id": "p7",
+    "summary": "Robin Sample discovery",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-03T18:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T18:45:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "attendees": [
+     {
+      "email": "robin@example.com",
+      "displayName": "Robin Sample"
+     }
+    ],
+    "description": "Owner of a 6 bed assisted living home. https://meet.google.com/rob-inmt-gxx"
+   },
+   {
+    "id": "p8",
+    "summary": "Discovery Call | Joey x Drew Sample",
+    "status": "cancelled",
+    "start": {
+     "dateTime": "2026-11-03T19:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-03T19:45:00-05:00",
+     "timeZone": "America/New_York"
+    }
+   },
+   {
+    "id": "p9",
+    "summary": "Discovery Call | Joey x Next Day",
+    "status": "confirmed",
+    "start": {
+     "dateTime": "2026-11-04T10:00:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "end": {
+     "dateTime": "2026-11-04T10:45:00-05:00",
+     "timeZone": "America/New_York"
+    },
+    "attendees": [
+     {
+      "email": "next@example.com"
+     }
+    ]
+   }
+  ]
+ },
+ "surven": {
+  "events": []
+ },
+ "busy_only": {
+  "accessRole": "freeBusyReader",
+  "events": [
+   {
+    "id": "b1",
+    "start": {
+     "dateTime": "2026-11-03T16:00:00-05:00"
+    },
+    "end": {
+     "dateTime": "2026-11-03T16:30:00-05:00"
+    },
+    "status": "confirmed",
+    "visibility": "private"
+   }
+  ]
+ }
+}

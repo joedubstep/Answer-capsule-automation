@@ -1,0 +1,14 @@
+{
+ "pipelines": [
+  {
+   "id": "pEmail",
+   "name": "Email Pipeline",
+   "stages": [
+    {
+     "id": "sReplied",
+     "name": "Replied"
+    }
+   ]
+  }
+ ]
+}

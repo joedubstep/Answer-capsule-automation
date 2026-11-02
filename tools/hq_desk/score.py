@@ -23,6 +23,7 @@ import sys
 
 from shared import et
 from tools.hq_desk import profile as prof
+from tools.hq_desk.pull import AUTO_SOURCES, write_json
 
 CAP = 15
 HOT_HOURS = 72
@@ -37,7 +38,6 @@ LABEL = {"hot": "Hot", "deciding": "Deciding", "owed": "Owed", "rebook": "Rebook
 
 CALL_TYPES = {"TYPE_CALL", "TYPE_CAMPAIGN_CALL", "TYPE_IVR_CALL"}
 NOT_REAL = {"TYPE_INTERNAL_COMMENT", "TYPE_COMMENT", "TYPE_NO_SHOW"}
-AUTO_SOURCES = {"workflow", "campaign", "bulk_actions", "bulk_action", "drip", "automation", "trigger"}
 DEAD_CALL = {"canceled", "cancelled", "failed"}
 CHANNEL = {"TYPE_SMS": "text", "TYPE_EMAIL": "email", "TYPE_CALL": "call", "TYPE_CAMPAIGN_CALL": "call",
            "TYPE_IVR_CALL": "call", "TYPE_LIVE_CHAT": "chat", "TYPE_WEBCHAT": "chat", "TYPE_WHATSAPP": "WhatsApp",
@@ -48,10 +48,14 @@ REBOOK_STAGES = {"no show"}
 REPLIED_STAGES = {"replied"}
 BOOKED_STAGES = {"meeting scheduled", "confirmed", "meeting booked", "tour booked", "tour confirmed"}
 PARKED_STAGES = {"wrong timing"}
+DEAD_STAGES = {"not interested", "unqualified", "wrong number", "lost", "dead"}
+CLIENT_STAGES = {"client", "closed", "closed won", "won"}
 CANCELLED_EVENT = {"cancelled", "canceled", "invalid"}
 NOSHOW_EVENT = {"noshow", "no_show", "no-show"}
 
-EXCLUDE_TAGS = {"client", "owner-joey", "svn-test", "svn-tooltest", "test-contact-delete-me", "opted out", "opted-out"}
+EXCLUDE_TAGS = {"client", "owner-joey", "svn-test", "svn-tooltest", "test-contact-delete-me", "opted out", "opted-out",
+                "svn-dnc", "svn-0-staff"}
+SAID_NO_TAGS = {"price-raise-no"}        # said no: left alone for good (planner principle 31) unless they write in
 DONE_AGENT_STAGES = ("dead", "closed by joey", "client")
 OPT_OUT_RX = re.compile(r"^\s*(stop|stop all|unsubscribe|end|quit|remove me)\s*[.!]*\s*$", re.I)
 AUTO_REPLY_RX = re.compile(r"out of (the )?office|automatic reply|auto-?reply|autoreply|undeliverable|delivery status", re.I)
@@ -77,6 +81,11 @@ def lead_hash(location_id, contact_id):
     return hashlib.sha256(f"{location_id}:{contact_id}".encode()).hexdigest()[:12]
 
 
+def clip(s, n):
+    s = str(s or "")
+    return s if len(s) <= n else s[:n].rsplit(" ", 1)[0].rstrip(" ,.;:") + "..."
+
+
 def plural(n, word, many=None):
     return f"{n} {word if n == 1 else (many or word + 's')}"
 
@@ -94,6 +103,28 @@ def age_label(hours):
 def hours_since(ts, now):
     d = et.parse(ts)
     return None if d is None else (now - d).total_seconds() / 3600.0
+
+
+def num(v):
+    """A number from a GHL value that may be a number, a numeric string or junk."""
+    try:
+        return float(str(v).replace(",", "").replace("$", "").strip() or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def flat(v):
+    """A field value as plain text: lists (multi-select, checkbox) are joined."""
+    if isinstance(v, (list, tuple)):
+        return ", ".join(str(x) for x in v if x not in (None, ""))
+    return "" if v is None else str(v)
+
+
+def code_str(v):
+    """A code field value as text: 41.0 -> "41"."""
+    if isinstance(v, float) and v.is_integer():
+        v = int(v)
+    return flat(v).strip()
 
 
 def first_int(v):
@@ -171,14 +202,21 @@ def channel_of(m):
     return CHANNEL.get(m.get("type"), "message")
 
 
+EPOCH = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+
+
+def _when(m):
+    return et.parse(m.get("when")) or EPOCH
+
+
 def msg_facts(messages, now):
-    msgs = sorted(messages or [], key=lambda x: str(x.get("when") or ""), reverse=True)
+    msgs = sorted(messages or [], key=_when, reverse=True)
     last_in = next((m for m in msgs if wants_reply(m)), None)
     last_joey = next((m for m in msgs if is_joey(m)), None)
     last_out_txt = next((m for m in msgs if is_joey(m) and m.get("text")), None)
     opted_out = any(m.get("dir") == "inbound" and OPT_OUT_RX.match(m.get("text") or "") for m in msgs[:5])
     unanswered = None
-    if last_in and (not last_joey or str(last_joey.get("when")) < str(last_in.get("when"))):
+    if last_in and (not last_joey or _when(last_joey) < _when(last_in)):
         unanswered = last_in
     real = [m for m in msgs if is_real(m)]
     return {
@@ -233,6 +271,13 @@ def pitched(offers):
     return False
 
 
+EMPTY_RX = re.compile(r"^\s*((none|nothing)( yet| owed| now| right now)?|n/?a|-+)\s*\.?\s*$", re.I)
+
+
+def is_empty(s):
+    return not str(s or "").strip() or bool(EMPTY_RX.match(str(s)))
+
+
 def parse_owed_field(text, now):
     """Agent Promises Owed: '2026-09-28: said I would check back' lines. The date is the due date."""
     s = str(text or "").strip()
@@ -243,10 +288,9 @@ def parse_owed_field(text, now):
     starts = list(re.finditer(r"(20\d\d-\d{2}-\d{2})\s*:?\s*", s))
     if not starts:
         parts = [p.strip(" -;|") for p in re.split(r"\n|;|\s\|\s", s)]
-        return [{"text": p, "date": None, "age_days": None, "source": "promises"} for p in parts
-                if p and norm(p) not in ("none", "nothing", "n/a")]
+        return [{"text": p, "date": None, "age_days": None, "source": "promises"} for p in parts if not is_empty(p)]
     lead = s[:starts[0].start()].strip(" -;|\n")
-    if lead and norm(lead) not in ("none", "nothing"):
+    if lead and not is_empty(lead):
         items.append({"text": lead, "date": None, "age_days": None, "source": "promises"})
     for i, m in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(s)
@@ -255,7 +299,7 @@ def parse_owed_field(text, now):
             d = dt.date.fromisoformat(m.group(1))
         except ValueError:
             d = None
-        if body:
+        if body and not is_empty(body):
             items.append({"text": body, "date": d.isoformat() if d else None,
                           "age_days": (today - d).days if d else None, "source": "promises"})
     return items
@@ -264,13 +308,13 @@ def parse_owed_field(text, now):
 def parse_waiting(waiting, now):
     """'Waiting on us' items from the picture, with who owes it and since when."""
     s = str(waiting or "").strip()
-    if not s or norm(s).strip(".") in ("none", "nothing", "n/a", "-"):
+    if is_empty(s):
         return []
     today = et.to_et(now).date()
     out = []
     for part in re.split(r";|\n|\s\|\s", s):
         p = part.strip(" .-")
-        if not p or norm(p) in ("none", "nothing"):
+        if is_empty(p):
             continue
         who = ""
         if re.search(r"(,|\()\s*joey\b|\bjoey\s*\)?$", p, re.I):
@@ -283,6 +327,10 @@ def parse_waiting(waiting, now):
     return out
 
 
+STOP_WORDS = {"joey", "with", "that", "this", "they", "their", "promised", "since", "asked", "about", "from",
+              "will", "would", "said", "send", "back"}
+
+
 def _words(s):
     return {w for w in re.findall(r"[a-z]{4,}", norm(s))}
 
@@ -292,9 +340,15 @@ def owed_items(fields, now):
     with due_in so the card can show them, but only due ones put a lead in the owed bucket."""
     a = parse_owed_field(fields.get("owed"), now)
     b = [x for x in parse_waiting(parse_picture(fields.get("picture")).get("waiting"), now) if x["who"] != "agent"]
+    def same(x, y):
+        wx, wy = _words(x["text"]) - STOP_WORDS, _words(y["text"]) - STOP_WORDS
+        if not wx or not wy:
+            return False
+        if len(wx & wy) / len(wx | wy) >= 0.4:
+            return True
+        return bool(x["date"] and x["date"] == y["date"] and wx & wy)
     for x in b:
-        wx = _words(x["text"])
-        if any(wx and len(wx & _words(y["text"])) / max(1, len(wx | _words(y["text"]))) >= 0.4 for y in a):
+        if any(same(x, y) for y in a):
             continue
         a.append(x)
     for x in a:
@@ -303,22 +357,22 @@ def owed_items(fields, now):
     return a
 
 
-def plan_log_top(text, n=3):
+def plan_log_top(text, n=3, width=280):
     lines = [x.strip() for x in str(text or "").splitlines() if x.strip()]
-    return lines[:n]
+    return [clip(x, width) for x in lines[:n]]
 
 
 # ---------------------------------------------------------------- one lead
 
 def lead_code(fields, tags):
     tags = {norm(t) for t in tags}
-    ec, rc, pc = fields.get("email_code"), fields.get("reply_code"), fields.get("partner_code")
-    if ec not in (None, "") and ("email-reply" in tags or rc in (None, "")):
-        return "E" + str(ec).strip()
-    if rc not in (None, ""):
-        return str(rc).strip()
-    if pc not in (None, ""):
-        return "P" + str(pc).strip()
+    ec, rc, pc = (code_str(fields.get(k)) for k in ("email_code", "reply_code", "partner_code"))
+    if ec and ("email-reply" in tags or not rc):
+        return "E" + ec
+    if rc:
+        return rc
+    if pc:
+        return "P" + pc
     return ""
 
 
@@ -333,7 +387,7 @@ def home_name(contact, fields, opps):
     return ""
 
 
-def is_excluded(contact, fields, facts, codes_skip, joey_contact, code):
+def is_excluded(contact, fields, facts, codes_skip, joey_contact, code, stages=()):
     tags = {norm(t) for t in contact.get("tags") or []}
     if contact.get("id") and contact.get("id") == joey_contact:
         return "Joey's own contact"
@@ -342,13 +396,15 @@ def is_excluded(contact, fields, facts, codes_skip, joey_contact, code):
     if contact.get("dnd"):
         return "do not disturb"
     for k in ("test", "suppressed"):
-        v = norm(fields.get(k))
-        if v and v not in ("no", "false", "0", "[]"):
+        v = norm(flat(fields.get(k)))
+        if v and v not in ("no", "false", "0", "off", "n"):
             return k
+    if set(stages) & CLIENT_STAGES:
+        return "client stage"
     name = norm(f"{contact.get('firstName')} {contact.get('lastName')}")
     if name in ("test", "test test", "joey") or name.startswith("test "):
         return "test name"
-    st = norm(fields.get("stage"))
+    st = norm(flat(fields.get("stage")))
     if st.startswith(DONE_AGENT_STAGES):
         return "agent stage " + st
     if code and code in codes_skip:
@@ -361,7 +417,7 @@ def is_excluded(contact, fields, facts, codes_skip, joey_contact, code):
 def is_parked(fields, deal_stages, now):
     if deal_stages & PARKED_STAGES:
         return True
-    st = norm(fields.get("stage"))
+    st = norm(flat(fields.get("stage")))
     if st.startswith("parked"):
         d = parse_loose_date(st, now)
         return d is None or d > et.to_et(now).date()
@@ -378,6 +434,8 @@ def meetings_for(cid, events, now):
             continue
         st = norm(e.get("status")).replace(" ", "")
         row = {"start": d.isoformat(), "status": st, "hours": (now - d).total_seconds() / 3600.0}
+        if d > now and st in CANCELLED_EVENT:
+            continue                      # a cancelled meeting ahead is no meeting
         (past if d <= now else future).append(row)
     past.sort(key=lambda r: r["start"], reverse=True)
     future.sort(key=lambda r: r["start"])
@@ -405,7 +463,10 @@ def fmt_clock(d):
 
 
 def fmt_et(ts):
-    d = et.to_et(et.parse(ts) if not isinstance(ts, dt.datetime) else ts)
+    d = ts if isinstance(ts, dt.datetime) else et.parse(ts)
+    if d is None:
+        return ""
+    d = et.to_et(d)
     return d.strftime("%a %b ") + str(d.day) + ", " + fmt_clock(d)
 
 
@@ -413,9 +474,10 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     fields = contact.get("fields") or {}
     facts = msg_facts(block.get("messages"), now)
     code = lead_code(fields, contact.get("tags") or [])
-    excluded = is_excluded(contact, fields, facts, set(raw.get("skip_codes") or []), raw.get("joey_contact"), code)
     open_opps = [o for o in opps if o.get("status") == "open"]
     stages = {norm(stage_name.get(o.get("stageId"), "")) for o in open_opps}
+    excluded = is_excluded(contact, fields, facts, set(raw.get("skip_codes") or []), raw.get("joey_contact"), code,
+                           stages)
     tags = {norm(t) for t in contact.get("tags") or []}
     pic = parse_picture(fields.get("picture"))
     offers = pic["offers"]
@@ -423,8 +485,8 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     owed = owed_items(fields, now)
     past, future = meetings_for(cid, events, now)
     parked = is_parked(fields, stages, now)
-    agent_stage = norm(fields.get("stage"))
-    first = str(fields.get("preferred") or contact.get("firstName") or "").strip()
+    agent_stage = norm(flat(fields.get("stage")))
+    first = flat(fields.get("preferred") or contact.get("firstName") or "").strip()
     if not first:
         first = (opps[0].get("contactName") or "").split(" ")[0] if opps else ""
     on_raise = "price-raise" in tags and "price-raise-no" not in tags
@@ -432,6 +494,11 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     beds = first_int(fields.get("beds"))
     buckets, why, waits = [], {}, {}
     attended = [p for p in past if p["status"] not in CANCELLED_EVENT | NOSHOW_EVENT]
+    # a meeting is still ahead (on the meeting calendar, by deal stage, or by the planner's Agent Stage)
+    booked = bool(future) or bool(stages & BOOKED_STAGES) or agent_stage.startswith("booked")
+    # every open deal sits in a dead stage (Not Interested, Unqualified, Wrong Number): only hot and owed apply
+    dead = (bool(stages) and stages <= DEAD_STAGES) or bool(tags & SAID_NO_TAGS)
+    last_noshow = bool(past) and past[0]["status"] in NOSHOW_EVENT
 
     # hot
     if facts["unanswered"] and facts["unanswered_hours"] is not None and facts["unanswered_hours"] <= HOT_HOURS:
@@ -453,9 +520,9 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
         why["owed"] = (f"You owe: {first_item}{extra}. "
                        + (f"Waiting {plural(oldest, 'day')}." if oldest is not None and oldest > 0 else "Due now."))
 
-    if not parked:
+    if not parked and not dead:
         # deciding
-        if not future and not (stages & (REBOOK_STAGES | BOOKED_STAGES)) and (
+        if not booked and not (stages & REBOOK_STAGES) and not last_noshow and (
                 stages & DECIDING_STAGES or agent_stage.startswith("thinking it over") or is_pitched):
             buckets.append("deciding")
             d_days = None
@@ -481,7 +548,7 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
             why["deciding"] = s
 
         # rebook
-        if (stages & REBOOK_STAGES or agent_stage.startswith(("no-show", "no show"))) and not future:
+        if (stages & REBOOK_STAGES or agent_stage.startswith(("no-show", "no show")) or last_noshow) and not booked:
             buckets.append("rebook")
             r_days = past[0]["hours"] / 24.0 if past else None
             if r_days is None:
@@ -525,8 +592,6 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
                                         if days >= 1 else "Warm referral, came in today. No touch yet.")
                 break
 
-    if not buckets and not excluded:
-        excluded = ""
     primary = max(buckets, key=lambda b: BASE[b]) if buckets else None
     score = 0.0
     if primary:
@@ -534,7 +599,7 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
         score += 10 if is_pitched else 0
         score += 5 if (on_raise and raise_live) else 0
         score += min(beds or 0, 30) / 3.0
-        score += min(max((o.get("value") or 0) for o in open_opps) / 1000.0, 10) if open_opps else 0
+        score += min(max(num(o.get("value")) for o in open_opps) / 1000.0, 10) if open_opps else 0
         w = waits.get(primary) or 0.0
         if primary == "hot":
             score += max(0.0, (HOT_HOURS - w * 24) / 12.0)
@@ -556,11 +621,11 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     elif primary == "deciding":
         action = "Ask for the decision. One short question."
         if on_raise and raise_live:
-            action += f" Price goes up {deadline['label']}."
+            action += f" Price goes up {deadline['label']} their time."
     elif primary == "owed":
         action = "Send what you promised. The draft is below if it could be written."
     elif primary == "rebook":
-        action = "Text to rebook. Offer two times."
+        action = "Text to rebook the meeting. Ask what day works."
     elif primary == "stale_replied":
         action = "Answer their reply and ask for a quick call."
     elif primary == "warm_referral":
@@ -590,7 +655,7 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     src = facts["unanswered"] or facts["last_in"]
     if src and src.get("text") and (hours_since(src.get("when"), now) or 1e9) <= 24 * 14:
         said = {"channel": channel_of(src), "ago": age_label(hours_since(src.get("when"), now)),
-                "text": scrub(src.get("text"))[:220]}
+                "text": clip(scrub(src.get("text")), 220)}
 
     deal_lines = [f"{o.get('pipeline')}: {stage_name.get(o.get('stageId'), '?')} ({o.get('status')})" for o in opps]
     li, lo = facts["last_in"], facts["last_out_text"]
@@ -598,6 +663,8 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
         "deals": deal_lines,
         "agent_stage": fields.get("stage") or "",
         "next_touch": fields.get("next") or "",
+        "callback_at": fields.get("callback_at") or "",
+        "whisper": clip(flat(fields.get("whisper")), 240),
         "picture": str(fields.get("picture") or "")[:1400],
         "plan_log": plan_log_top(fields.get("log")),
         "offers": offers,
@@ -611,6 +678,8 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
         "last_from_joey": ({"when": fmt_et(lo["when"]), "channel": channel_of(lo), "text": lo.get("text") or ""}
                            if lo else None),
         "last_touch_hours": round(facts["last_joey_hours"], 1) if facts["last_joey_hours"] is not None else None,
+        "last_touch": ({"when": fmt_et(facts["last_joey"]["when"]), "channel": channel_of(facts["last_joey"]),
+                        "status": facts["last_joey"].get("status") or ""} if facts["last_joey"] else None),
         "last_meeting": ({"when": fmt_et(past[0]["start"]), "status": past[0]["status"]} if past else None),
         "next_meeting": ({"when": fmt_et(future[0]["start"]), "status": future[0]["status"]} if future else None),
         "price_raise": {"on_list": on_raise, "days_left": deadline["days_left"] if deadline else None,
@@ -670,42 +739,86 @@ def health_flags(raw, leads, now, deadline, routines=None):
 
     live = [l for l in leads if not l["excluded"]]
     stale = [l for l in live if "stale_replied" in l["buckets"]]
-    n = len(stale)
-    flags.append({"key": "stale_replied", "level": "red" if n >= 5 else ("amber" if n else "ok"), "count": n,
-                  "text": (f"{plural(n, 'reply', 'replies')} waiting with no touch from you in 2+ days."
-                           if n else "Every reply has had a touch in the last 2 days."),
-                  "codes": [l["code"] for l in stale if l["code"]][:12]})
+    flags.append(stale_flag(len(stale), [l["code"] for l in stale if l["code"]],
+                            [[l["hash"], l["code"]] for l in stale]))
 
     if deadline and not deadline["passed"]:
         d = deadline["days_left"]
         flags.append({"key": "price_raise", "level": "red" if d <= 3 else ("amber" if d <= 7 else "info"), "count": d,
                       "text": (f"Price raise ends today, {deadline['label']} their time." if d == 0 else
-                               f"Price raise deadline in {plural(d, 'day')}: {deadline['label']}.")})
+                               f"Price raise deadline in {plural(d, 'day')}: {deadline['label']} their time.")})
 
     unans = [l for l in live if l["unanswered_hours"] is not None
              and UNANSWERED_HOURS <= l["unanswered_hours"] <= UNANSWERED_WINDOW_DAYS * 24]
     unans.sort(key=lambda l: -l["unanswered_hours"])
-    n = len(unans)
-    flags.append({"key": "unanswered", "level": "red" if n else "ok", "count": n,
-                  "text": (f"{plural(n, 'lead')} wrote in and got no answer for over 24 hours."
-                           if n else "No message has waited over 24 hours."),
-                  "codes": [l["code"] for l in unans if l["code"]][:12]})
+    flags.append(unanswered_flag(len(unans), [l["code"] for l in unans if l["code"]],
+                                 [[l["hash"], l["code"]] for l in unans]))
 
     if routines is not None:
-        bad = [r for r in routines if norm(r.get("status")) in ("failed", "error", "timed_out", "timeout")]
-        if bad:
-            flags.append({"key": "routines", "level": "red", "count": len(bad),
-                          "text": "Last run failed: " + ", ".join(str(r.get("name") or "a routine") for r in bad[:5]) + "."})
-        else:
-            flags.append({"key": "routines", "level": "ok", "count": 0, "text": "Every Surven routine ran fine last time."})
+        flags.append(routine_flag(routines))
 
     errs = [e for e in raw.get("errors") or [] if e and e[0] != "bound"]
     if errs:
         flags.append({"key": "data", "level": "amber", "count": len(errs),
                       "text": f"{plural(len(errs), 'read')} from GoHighLevel failed, so this list may be short."})
-    order = {"red": 0, "amber": 1, "info": 2, "ok": 3}
-    flags.sort(key=lambda f: order.get(f["level"], 9))
-    return flags
+    return sort_flags(flags)
+
+
+FLAG_ORDER = {"red": 0, "amber": 1, "info": 2, "ok": 3}
+
+
+def sort_flags(flags):
+    return sorted(flags, key=lambda f: FLAG_ORDER.get(f["level"], 9))
+
+
+def routine_flag(routines):
+    """routines: [{name, status}] from list_triggers (last_run.status), or {"unavailable": "why"}."""
+    if isinstance(routines, dict):
+        return {"key": "routines", "level": "info", "count": 0,
+                "text": "Could not check the other routines today: " + str(routines.get("unavailable") or "no tool") + "."}
+    bad = [r for r in routines or [] if norm(r.get("status")) in ("failed", "error", "timed_out", "timeout", "errored")]
+    if bad:
+        return {"key": "routines", "level": "red", "count": len(bad),
+                "text": "Last run failed: " + ", ".join(str(r.get("name") or "a routine") for r in bad[:5]) + "."}
+    return {"key": "routines", "level": "ok", "count": 0,
+            "text": f"Every Surven routine ran fine last time ({plural(len(routines or []), 'checked', 'checked')})."}
+
+
+def stale_flag(n, codes, ids):
+    return {"key": "stale_replied", "level": "red" if n >= 5 else ("amber" if n else "ok"), "count": n,
+            "text": (f"{plural(n, 'reply', 'replies')} waiting with no touch from you in 2+ days."
+                     if n else "Every reply has had a touch in the last 2 days."),
+            "codes": codes[:12], "ids": ids}
+
+
+def unanswered_flag(n, codes, ids):
+    return {"key": "unanswered", "level": "red" if n else "ok", "count": n,
+            "text": (f"{plural(n, 'lead')} wrote in and got no answer for over 24 hours."
+                     if n else "No message has waited over 24 hours."),
+            "codes": codes[:12], "ids": ids}
+
+
+def apply_hides(desk):
+    """Take leads the drafting pass hid (auto reply, client, never work) out of the counted flags.
+    Idempotent: it works from the full id list each flag keeps."""
+    hidden = {l["hash"] for l in desk.get("items", []) if (l.get("drafts") or {}).get("hide")}
+    makers = {"stale_replied": stale_flag, "unanswered": unanswered_flag}
+    flags = []
+    for f in desk.get("health") or []:
+        if f.get("key") in makers and "ids" in f:
+            keep = [x for x in f["ids"] if x[0] not in hidden]
+            f = makers[f["key"]](len(keep), [c for _, c in keep if c], f["ids"])
+        flags.append(f)
+    desk["health"] = sort_flags(flags)
+    return desk
+
+
+def apply_routines(desk, routines):
+    """Add or replace the routines flag on an already scored desk."""
+    flags = [f for f in desk.get("health") or [] if f["key"] != "routines"]
+    flags.append(routine_flag(routines))
+    desk["health"] = sort_flags(flags)
+    return desk
 
 
 def build(raw, now=None, routines=None, cap=CAP):
@@ -758,7 +871,8 @@ def brief(desk, n=CAP):
     for l in desk["items"][:n]:
         out["leads"].append({k: l[k] for k in ("id", "first", "home", "code", "primary", "buckets", "why", "waiting",
                                                 "action", "suggest", "chips")}
-                            | {"owed": [x for x in l["owed"] if x["due"]], "context": l["context"]})
+                            | {"owed": [dict(x, i=i) for i, x in enumerate(y for y in l["owed"] if y["due"])],
+                               "context": l["context"]})
     return out
 
 
@@ -777,9 +891,8 @@ def main(argv=None):
         with open(a.routines, encoding="utf-8") as f:
             routines = json.load(f)
     desk = build(raw, now=et.parse(a.now) if a.now else None, routines=routines)
-    from tools.hq_desk.pull import write_json
     write_json(a.out, desk)
-    write_json(a.brief, brief(desk))
+    write_json(a.brief, brief(desk), indent=None)
     c = desk["counts"]
     print(f"desk: {c['candidates']} leads ranked ({c['hot']} hot, {c['deciding']} deciding, {c['owed']} owed, "
           f"{c['rebook']} rebook, {c['stale_replied']} replied waiting, {c['warm_referral']} warm referral); "

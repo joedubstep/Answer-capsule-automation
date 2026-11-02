@@ -1,0 +1,19 @@
+{
+ "messages": {
+  "nextPage": false,
+  "messages": [
+   {
+    "id": "m1",
+    "dateAdded": "2026-10-20T14:00:00Z",
+    "direction": "outbound",
+    "messageType": "TYPE_CALL",
+    "meta": {
+     "call": {
+      "duration": 95,
+      "status": "completed"
+     }
+    }
+   }
+  ]
+ }
+}

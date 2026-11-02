@@ -1,0 +1,16 @@
+{
+ "conversations": [
+  {
+   "id": "conv4",
+   "contactId": "cDana4"
+  },
+  {
+   "id": "conv1",
+   "contactId": "cPat1"
+  },
+  {
+   "id": "conv3",
+   "contactId": "cChris3"
+  }
+ ]
+}

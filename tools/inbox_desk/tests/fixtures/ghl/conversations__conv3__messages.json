@@ -1,0 +1,14 @@
+{
+ "messages": {
+  "nextPage": false,
+  "messages": [
+   {
+    "id": "m2",
+    "dateAdded": "2026-11-02T16:00:00Z",
+    "direction": "outbound",
+    "messageType": "TYPE_EMAIL",
+    "body": "Thanks Chris."
+   }
+  ]
+ }
+}

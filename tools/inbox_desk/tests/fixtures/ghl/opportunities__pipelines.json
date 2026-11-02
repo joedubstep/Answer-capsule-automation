@@ -1,0 +1,18 @@
+{
+ "pipelines": [
+  {
+   "id": "D26Fys9N44CiadqYjkm7",
+   "name": "Email Pipeline",
+   "stages": [
+    {
+     "id": "sReplied",
+     "name": "Replied"
+    },
+    {
+     "id": "sTalked",
+     "name": "Talked"
+    }
+   ]
+  }
+ ]
+}
