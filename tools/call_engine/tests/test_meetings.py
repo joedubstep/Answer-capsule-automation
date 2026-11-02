@@ -118,6 +118,49 @@ class SelectTests(unittest.TestCase):
         why = {s["recording_id"]: s["why"] for s in r["skipped"]}
         self.assertIn("probably already in the library", why["900000009"])
 
+    def soft(self, title, date, rows, kind="coaching"):
+        return mt.soft_match({"title": title, "date": date}, kind, mt.soft_rows(rows))
+
+    def test_same_date_different_call_type_is_not_a_match(self):
+        # a one-on-one with the Lead Suite account manager on the day of a mastermind already in the LS library
+        lib = {"sales": [], "ls": [{"Call": "Mastermind 10/1", "Link": "https://fathom.video/share/AbC"}]}
+        self.assertIsNone(self.soft("Joey g and Dana Example", "2026-10-01", lib))
+        self.assertIsNone(self.soft("Account manager 1:1 coaching", "2026-10-01", lib))
+        self.assertIsNone(self.soft("Dana Example coaching call", "2026-10-01", lib))
+        self.assertIsNone(self.soft("One on one with Dana", "2026-10-01", lib))
+        # two discovery calls the same day with different people are two calls
+        sales = {"sales": [{"Call": "Pat Example discovery, 2026-10-27", "Link": "https://fathom.video/share/XyZ"}]}
+        self.assertIsNone(self.soft("Robin Sample discovery", "2026-10-27", sales, kind="discovery"))
+        # a shared name does not join a one-on-one to a group call
+        ls = {"ls": [{"Call": "Mastermind 10/1 with Dana", "Link": ""}]}
+        self.assertIsNone(self.soft("Dana 1:1", "2026-10-01", ls))
+
+    def test_same_date_shared_name_or_coaching_keyword_is_a_match(self):
+        lib = {"sales": [{"Call": "Pat Example discovery, 2026-10-29", "Link": "https://fathom.video/share/AbC"}],
+               "ls": [{"Call": "Dana Example 1:1, 10/1", "Link": ""},
+                      {"Call": "Mastermind 10/2", "Link": "https://fathom.video/share/Grp"}]}
+        self.assertEqual(self.soft("joey x Pat Example", "2026-10-29", lib, kind="discovery"),
+                         "Pat Example discovery, 2026-10-29")
+        self.assertEqual(self.soft("Dana Example coaching", "2026-10-01", lib), "Dana Example 1:1, 10/1")
+        self.assertEqual(self.soft("Account manager one-on-one", "2026-10-01", lib), "Dana Example 1:1, 10/1")
+        self.assertEqual(self.soft("Weekly Mastermind", "2026-10-02", lib), "Mastermind 10/2")
+        self.assertIsNone(self.soft("Weekly Mastermind", "2026-10-03", lib))          # the date still has to match
+
+    def test_one_on_one_coaching_call_is_reviewed_not_skipped(self):
+        listed = mt.parse_list("- Joey g and Dana Example | 2026-10-01 | id: 900000020 | url: "
+                               "https://fathom.video/calls/111111120 | recorded by Joey Host | dana@coach.example.com")
+        lib = {"sales": [], "ls": [{"Call": "Mastermind 10/1", "Link": "https://fathom.video/share/AbC"}]}
+        r = mt.select_new(listed, lib, since="2026-10-01", max_n=10, today=dt.date(2026, 10, 2))
+        self.assertEqual([m["recording_id"] for m in r["todo"]], ["900000020"])
+        self.assertEqual(r["todo"][0]["library"], "ls")
+        self.assertEqual(r["skipped"], [])
+
+    def test_call_types(self):
+        self.assertEqual(mt.call_types("Mastermind 10/1"), ({"mastermind"}, {"group"}))
+        self.assertEqual(mt.call_types("Dana 1 on 1")[1], {"one-on-one"})
+        self.assertEqual(mt.call_types("Pat 11:15 call 10/11"), (set(), set()))      # times and dates are not 1:1
+        self.assertNotIn("manager", mt.name_tokens("Account manager call with Dana"))
+
     def test_link_keys(self):
         self.assertIn("call:42", mt.link_keys("https://fathom.video/calls/42?timestamp=3"))
         self.assertIn("share:AbC_d-1", mt.link_keys("https://fathom.video/share/AbC_d-1"))

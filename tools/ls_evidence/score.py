@@ -953,8 +953,8 @@ def scoreboard(settings, win, calls, leads, sop_rates, today):
         line = (f"{n} qualified calls are booked, so Lead Suite has hit the {target}-call number. The refund does not "
                 f"apply unless some of these calls were not qualified.")
     elif not win["over"]:
-        line = (f"{n} of {target} qualified calls with {plural(left, 'day')} left. At this pace the window ends near "
-                f"{pace}. If it ends under {target}, the refund rests on the proof: every lead's checklist "
+        line = (f"{n} of {target} qualified calls with {plural(left, 'day')} left. At this pace the window ends with "
+                f"about {plural(pace, 'call')}. If it ends under {target}, the refund rests on the proof: every lead's checklist "
                 f"({'no boxes yet' if lp is None else str(lp) + '% of due boxes done'}), the portal rows, and ad spend "
                 f"from Meta and Mercury.")
     else:
@@ -981,19 +981,21 @@ def conditions(settings, board, sop_rates, leads):
 
 
 def portal_rows(leads, calls, prev, entered_through, settings, loc, now):
-    """Which finished rows still need typing into the portal. A row counts as typed in when the last page listed it
-    with the same answers, or its date is on or before `entered_through`. A listed row whose answers changed comes
-    back as changed."""
+    """Which finished rows still need typing into the portal. Each row is listed once: after a page lists it, the next
+    run treats it as typed in, unless its answers changed (then it comes back as changed). A date in settings counts
+    every row on or before it as typed in. A date Joey gives on demand (`entered_through`) also brings back every
+    finished row after it, even ones an earlier page listed, for the week he skipped."""
     loc_h = short_hash(loc, "loc")
     prev_ok = bool(prev) and prev.get("loc") == loc_h
     prev_rows = dict(prev.get("rows") or {}) if prev_ok else {}
+    explicit = bool(entered_through)
     thru = entered_through or (settings.get("portal") or {}).get("entered_through")
-    if prev_ok and prev.get("entered_through") and (not thru or prev["entered_through"] > thru) and not entered_through:
+    if not explicit and prev_ok and prev.get("entered_through") and (not thru or prev["entered_through"] > thru):
         thru = prev["entered_through"]
     thru_d = dt.date.fromisoformat(thru) if thru else None
     out = {"new_leads": [], "changed_leads": [], "new_calls": [], "changed_calls": [], "waiting_leads": [],
            "waiting_calls": [], "first_run": not prev_ok and not thru_d, "entered_through": thru,
-           "prev_date": prev.get("date") if prev_ok else None}
+           "relisted": explicit, "prev_date": prev.get("date") if prev_ok else None}
     rows = dict(prev_rows)
     for kind, items, date_key in (("leads", leads, "t0_date"), ("calls", calls, "start_date")):
         for r in items:
@@ -1001,15 +1003,13 @@ def portal_rows(leads, calls, prev, entered_through, settings, loc, now):
             if not r["ready"]:
                 out["waiting_" + kind].append(r["hash"])
                 continue
-            if thru_d and dt.date.fromisoformat(r[date_key]) <= thru_d and key not in prev_rows:
-                rows[key] = r["answers"]
-                continue
-            if key in prev_rows:
-                if prev_rows[key] != r["answers"]:
-                    out["changed_" + kind].append({"hash": r["hash"], "was": prev_rows[key]})
-                    rows[key] = r["answers"]
-                continue
-            out["new_" + kind].append(r["hash"])
+            on_or_before = bool(thru_d) and dt.date.fromisoformat(r[date_key]) <= thru_d
+            if key in prev_rows and prev_rows[key] != r["answers"] and (on_or_before or not explicit):
+                out["changed_" + kind].append({"hash": r["hash"], "was": prev_rows[key]})
+            elif on_or_before or (key in prev_rows and not explicit):
+                pass                                   # already in the portal
+            else:
+                out["new_" + kind].append(r["hash"])
             rows[key] = r["answers"]
     state = {"v": 1, "loc": loc_h, "date": et.to_et(now).date().isoformat(), "entered_through": thru, "rows": rows}
     return out, state

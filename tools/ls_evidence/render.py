@@ -20,6 +20,9 @@ from tools.ls_evidence.score import (CALL_BOXES, LEAD_BOXES, NO, NOT_DUE, UNKNOW
 
 E = html.escape
 CLS = {YES: "y", NO: "n", NOT_DUE: "nd", UNKNOWN: "u"}
+SHORT = {"triple_dial": "Triple dial", "sms1": "SMS 1", "double_dial": "Double dial", "sms2": "SMS 2", "sms3": "SMS 3",
+         "lead_replied": "Replied", "triage": "Triage", "show_sop": "Show SOP", "precall_email": "Pre-call email",
+         "morning_confirm": "Morning confirm", "showed": "Showed"}
 PROOF = {"crm": ("GHL proves it", "ok"), "partly": ("Partly in GHL", "part"), "outside": ("Outside GHL", "out")}
 
 CSS = """
@@ -208,9 +211,13 @@ def portal_section(ev):
             bits.append(f"Rows already listed on the {E(fmt_day(dt.date.fromisoformat(p['prev_date'])))} page are left out")
         if p.get("entered_through"):
             bits.append(f"rows on or before {E(fmt_day(dt.date.fromisoformat(p['entered_through'])))} count as entered")
-        if bits:
-            parts.append(f'<p class="note">{"; ".join(bits)}. Missed a week? Ask Claude for "lead suite evidence now, '
-                         f'entered through" and the date.</p>')
+        if p.get("relisted") and p.get("entered_through"):
+            bits = [f"every finished row after {E(fmt_day(dt.date.fromisoformat(p['entered_through'])))} is listed "
+                    f"again, as asked"]
+        bits.append("each row shows once")
+        text = "; ".join(bits)
+        parts.append(f'<p class="note">{text[:1].upper() + text[1:]}. Missed a Sunday? Ask Claude for "lead suite '
+                     f'evidence now, entered through" and the last date you typed in: every row after it comes back.</p>')
     for kind, label, add in (("leads", "Leads", "+ Add Lead"), ("calls", "Booked calls", "+ Add Call")):
         src = leads if kind == "leads" else calls
         k1 = "lead" if kind == "leads" else "call"
@@ -251,7 +258,7 @@ def tsv_line(cols):
 def evidence_section(ev):
     leads = sorted(ev["leads"], key=lambda r: r["t0"])
     calls = sorted([c for c in ev["calls"]], key=lambda r: r["start"])
-    lh = "".join(f"<th>{i + 1}. {E(label)}</th>" for i, (_, label) in enumerate(LEAD_BOXES))
+    lh = "".join(f'<th title="{E(label)}">{i + 1}. {E(SHORT[k])}</th>' for i, (k, label) in enumerate(LEAD_BOXES))
     lrows, ltsv = [], [tsv_line(["Lead", "Code", "Lead in (ET)", "Source of time"]
                                 + [f"{i + 1}. {label}" for i, (_, label) in enumerate(LEAD_BOXES)]
                                 + ["SOP boxes done", "Stage", "Note"])]
@@ -264,7 +271,7 @@ def evidence_section(ev):
         ltsv.append(tsv_line([scrub(r["first"]), r["code"], r["t0_et"], r["t0_src"]]
                              + [f"{r['boxes'][k]['a']} ({scrub(r['boxes'][k]['why'])})" for k, _ in LEAD_BOXES]
                              + [f"{r['sop_yes']} of {r['sop_due']}", r["stage"], note]))
-    ch = "".join(f"<th>{i + 1}. {E(label)}</th>" for i, (_, label) in enumerate(CALL_BOXES))
+    ch = "".join(f'<th title="{E(label)}">{i + 1}. {E(SHORT[k])}</th>' for i, (k, label) in enumerate(CALL_BOXES))
     crows, ctsv = [], [tsv_line(["Lead", "Code", "Call (ET)", "Booked (ET)", "Calendar"]
                                 + [f"{i + 1}. {label}" for i, (_, label) in enumerate(CALL_BOXES)]
                                 + ["Counts toward the target", "Notes"])]

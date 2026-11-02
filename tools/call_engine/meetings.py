@@ -24,8 +24,10 @@ Backfill: --since a date, no window. Either way at most --max per run, oldest fi
 
 Library rows whose Link has no Fathom call id (share links like fathom.video/share/..., other note links, or no
 link) cannot be matched by id. A meeting is treated as "probably already in the library" when such a row's Call
-title carries the meeting's date (M/D or YYYY-MM-DD) and either the meeting is a coaching call and the row is in
-the LS library, or the title shares a name with the row. Those go to "skipped" with the row title, never to todo.
+title carries the meeting's date (M/D or YYYY-MM-DD) AND the two titles share a person's name or the same coaching
+keyword (mastermind, offer operators, one-on-one, account manager ...), AND they do not name different kinds of
+call (a one-on-one coaching call is not the mastermind held the same day). The date alone is never enough. Those
+go to "skipped" with the row title, never to todo.
 """
 import argparse
 import datetime as _dt
@@ -128,17 +130,57 @@ def library_keys(library):
 
 MD_DATE = re.compile(r"(?<![\d/])(\d{1,2})/(\d{1,2})(?![\d/])")
 ISO_DATE = re.compile(r"\b\d{4}-(\d{2})-(\d{2})\b")
-_GENERIC = {"mastermind", "master", "mind", "call", "calls", "coaching", "group", "weekly", "offer", "operators",
-            "review", "reviews", "joey", "joseph", "and", "the", "with", "discovery", "follow", "close", "meeting",
-            "google", "meet", "impromptu", "surven", "sam", "lead", "suite", "zoom", "session"}
+# Words that name the kind of call, never a person. Each maps to (keyword, family). Two titles on the same date
+# are the same call only when they share a person's name or a coaching keyword (one group program, or a one-on-one).
+# Sales keywords never match on their own (Joey has several discovery calls a day), but two titles whose families
+# differ (a one-on-one and a mastermind, a discovery and an onboarding) are never the same call.
+CALL_TYPES = [
+    (re.compile(r"\bmaster\s?mind\b", re.I), "mastermind", "group"),
+    (re.compile(r"\boffer\s+operators?\b", re.I), "offer operators", "group"),
+    (re.compile(r"\bgroup\b", re.I), "group", "group"),
+    (re.compile(r"\boffice\s+hours?\b", re.I), "office hours", "group"),
+    (re.compile(r"\bhot\s?seats?\b", re.I), "hot seat", "group"),
+    (re.compile(r"\bworkshop\b|\btraining\b|\bstudents\b", re.I), "workshop", "group"),
+    (re.compile(r"(?<![\d/])1\s?(?::|on|-on-|x)\s?1(?![\d/])|\bone[\s-]+on[\s-]+one\b|\bprivate\s+coaching\b",
+                re.I), "one-on-one", "one-on-one"),
+    (re.compile(r"\baccount\s+manager\b", re.I), "account manager", "one-on-one"),
+    (re.compile(r"\bdisco(?:very)?\b|\bstrategy\s+call\b|\bconsult(?:ation)?\b|\bdemo\b", re.I), "discovery", "sales"),
+    (re.compile(r"\bfollow[\s-]?up\b|\bcall\s?back\b|\bsecond\s+call\b", re.I), "follow-up", "follow-up"),
+    (re.compile(r"\bclos(?:e|ing)\s+call\b|\bagreement\b|\bsign(?:ing)?\s+call\b", re.I), "close", "close"),
+    (re.compile(r"\bon[\s-]?boarding\b|\bkick[\s-]?off\b|\bgo[\s-]?live\b", re.I), "onboarding", "onboarding"),
+]
+COACH_FAMILIES = {"group", "one-on-one"}
+COACH_TYPES = {key for _, key, fam in CALL_TYPES if fam in COACH_FAMILIES}
+_GENERIC = {"mastermind", "master", "mind", "call", "calls", "coach", "coaching", "group", "weekly", "offer",
+            "operators", "operator", "review", "reviews", "joey", "joseph", "and", "the", "with", "for", "discovery",
+            "disco", "follow", "followup", "close", "closing", "meeting", "google", "meet", "impromptu", "surven",
+            "sam", "lead", "suite", "leadsuite", "agency", "zoom", "session", "one", "account", "manager", "private",
+            "office", "hours", "hot", "seat", "workshop", "training", "students", "strategy", "consult",
+            "consultation", "demo", "back", "second", "agreement", "sign", "signing", "onboarding", "boarding",
+            "kick", "kickoff", "off", "live", "check", "sales", "sync", "chat", "notes", "recap", "week", "daily"}
 
 
 def _md(d):
     return "%d/%d" % (int(d[5:7]), int(d[8:10]))
 
 
+def call_types(title):
+    """-> ({keywords}, {families}) the title names, e.g. 'Mastermind 10/1' -> ({'mastermind'}, {'group'})."""
+    keys, fams = set(), set()
+    for rx, key, fam in CALL_TYPES:
+        if rx.search(title or ""):
+            keys.add(key)
+            fams.add(fam)
+    return keys, fams
+
+
+def name_tokens(title):
+    """Words in a title that can be a person's name (call-type and filler words removed)."""
+    return {t for t in re.findall(r"[a-z]{3,}", (title or "").lower())} - _GENERIC
+
+
 def soft_rows(library):
-    """Library rows that have no Fathom call id in Link: {lib, title, dates (M/D), tokens}."""
+    """Library rows that have no Fathom call id in Link: {lib, title, dates (M/D), tokens, types, families}."""
     out = []
     for lib in ("sales", "ls"):
         for r in _rows(library.get(lib)):
@@ -149,21 +191,30 @@ def soft_rows(library):
             dates = {"%d/%d" % (int(m), int(d)) for m, d in MD_DATE.findall(title)}
             dates |= {"%d/%d" % (int(m), int(d)) for m, d in ISO_DATE.findall(title)}
             if dates:
-                out.append({"lib": lib, "title": title, "dates": dates,
-                            "tokens": {t for t in re.findall(r"[a-z]{3,}", title.lower())} - _GENERIC})
+                keys, fams = call_types(title)
+                out.append({"lib": lib, "title": title, "dates": dates, "tokens": name_tokens(title),
+                            "types": keys, "families": fams})
     return out
 
 
 def soft_match(m, kind, soft):
-    """-> the library row title this meeting probably already has, or None."""
+    """-> the library row title this meeting probably already has, or None.
+
+    The date alone is never enough (a one-on-one with the account manager is not the mastermind held the same
+    day). The titles must also share a person's name or a coaching keyword, and must not name different kinds of
+    call. `kind` is kept for callers; the decision reads the titles only."""
     if not m.get("date"):
         return None
     md = _md(m["date"])
-    toks = {t for t in re.findall(r"[a-z]{3,}", (m.get("title") or "").lower())} - _GENERIC
+    title = m.get("title") or ""
+    toks = name_tokens(title)
+    keys, fams = call_types(title)
     for r in soft:
         if md not in r["dates"]:
             continue
-        if (kind == "coaching" and r["lib"] == "ls") or (toks & r["tokens"]):
+        if fams and r["families"] and not (fams & r["families"]):
+            continue                                  # different kinds of call: one-on-one vs group, and so on
+        if (toks & r["tokens"]) or (keys & r["types"] & COACH_TYPES):
             return r["title"]
     return None
 

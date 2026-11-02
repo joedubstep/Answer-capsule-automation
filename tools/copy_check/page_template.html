@@ -560,8 +560,8 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
   var RULES = JSON.parse(document.getElementById("rules-data").textContent);
   var C = window.SurvenCopyCheck;
   var KEY = "surven-copy-checker.v1";
-  var EXAMPLE = "hi Pat, hope you're doing well! I looked at your care home's score \u2014 our clients see " +
-    "3x more tours. Is now a bad time to talk? It's only $500/mo. Reply STOP to opt out.";
+  var EXAMPLE = "hi Pat, hope you're doing well! I looked at your care home's score \u2014 is " +
+    "now a bad time to talk? It's only $500/mo. Reply STOP to opt out.";
   var $ = function (id) { return document.getElementById(id); };
   var draft = $("draft"), exampleOn = false, timer = null, last = null;
 

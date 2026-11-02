@@ -12,8 +12,7 @@ It catches the things you used to fix by hand:
 - "care home", "patients", and "leads" when you mean families
 - audit, assessment, grade or score in cold outreach
 - "is now a bad time" and "when is a good time to talk"
-- a price before the call, statistics, and the made-up stats
-- made-up client results, like "our clients see"
+- a price before the call
 - emojis, needy lines ("just checking in"), filler and hype
 - names that were never filled in, like {first} or [Name]
 - sentences that start lowercase, sentences over 20 words, and more than one question in a text
@@ -47,7 +46,7 @@ Paste, fix the red, decide on the yellow, then tap Copy text and send it the way
 
 About 45 minutes a week. That is the time spent reading drafts line by line for dashes, spellings, banned words, lowercase starts, the booking link and the opt-out line.
 
-It also stops the kind of mistakes that got through before. Dashes were in 8 of 12 templates. A British spelling reached a care-home email. The 75% stat reached an ad.
+It also stops the kind of mistakes that got through before. Dashes were in 8 of 12 templates. A British spelling reached a care-home email.
 
 ## Good to know
 

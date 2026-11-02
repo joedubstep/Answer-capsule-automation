@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -21,6 +22,41 @@ class Settings(unittest.TestCase):
         self.assertEqual(d["vendors"]["example_buyer"]["senders"], ["buyer.example.com"])
         self.assertEqual(d["ignore"], ["friend@example.net"])
         self.assertNotIn("nobody", d["coaches"])
+
+    def test_mailto_links_are_read_once(self):
+        # Notion stores each address as a mailto link, so the raw line names it twice
+        text = ("- own: [other.inbox@example.com](mailto:other.inbox@example.com)\n"
+                "- client legacy: [client.person@example.com](mailto:client.person@example.com), example.com\n"
+                "- coach Pat Coach: [pat_coach@example.com](mailto:pat_coach@example.com), "
+                "<mailto:pat.coach2@example.com>\n"
+                "- coach Pat Coach: [pat_coach@example.com](mailto:pat_coach@example.com)\n"
+                "- vendor Example Buyer: [Buyer site](https://buyer.example.com/)\n"
+                "- ignore: mailto:friend@example.com, [friend@example.com](mailto:friend@example.com)\n"
+                "- ignore: *first\\_last@example.com*\n")
+        d = st.parse_settings_text(text)
+        self.assertEqual(d["own"], ["other.inbox@example.com"])
+        self.assertEqual(d["clients"]["legacy"]["senders"], ["client.person@example.com", "example.com"])
+        self.assertEqual(d["coaches"]["pat_coach"]["senders"], ["pat_coach@example.com", "pat.coach2@example.com"])
+        self.assertEqual(d["vendors"]["example_buyer"]["senders"], ["buyer.example.com"])
+        self.assertEqual(d["ignore"], ["friend@example.com", "first_last@example.com"])
+        flat = json.dumps(d)
+        self.assertNotIn("mailto", flat)
+        self.assertNotIn("](", flat)
+        # 8 distinct senders: the count says 8, not one per link half
+        with tempfile.TemporaryDirectory() as tmp:
+            src, out = os.path.join(tmp, "s.md"), os.path.join(tmp, "p.json")
+            with open(src, "w") as f:
+                f.write(text)
+            import io
+            from contextlib import redirect_stdout
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                st.main(["--from-text", src, "--out", out])
+            self.assertIn("settings: 8 sender(s)", buf.getvalue())
+        r = st.load_rules(private=d, config={}, senders={"coaches": {"pat_coach": {"label": "Pat Coach",
+                                                                                     "domains": [],
+                                                                                     "senders": ["pat_coach@example.com"]}}})
+        self.assertEqual(r["coaches"]["pat_coach"]["senders"], ["pat_coach@example.com", "pat.coach2@example.com"])
 
     def test_merge(self):
         cfg = {"google": {"joey_gmail": "owner@example.com"}, "cold_email_domains": ["a-camp.com", "surven.ai"],

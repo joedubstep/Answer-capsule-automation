@@ -1,6 +1,7 @@
 """Time Ledger runner: the commands the skill calls, in this order.
 
   python3 -m tools.time_ledger.run sql      --mode nightly|backfill|weekly [--page FILE --edited ISO] [--day YYYY-MM-DD]
+  python3 -m tools.time_ledger.run more     existing|week_this|week_prev   (after each saved page of a SQL read)
   python3 -m tools.time_ledger.run prepare  --page FILE --existing FILE --mode nightly|backfill|weekly
                                             [--day YYYY-MM-DD] [--edited ISO]
   python3 -m tools.time_ledger.run build    [--labels FILE] [--evidence FILE] [--ghl]
@@ -37,6 +38,8 @@ JOEY_EMAIL_KEY = ("google", "joey_gmail")
 ALLOWED_TO_SHA256 = "b78760b38cb5f8f87fc4bb5d3a0522a7fa93e3fdc01d6f7124bf6493f09e1b04"
 WEEK_TEXT = 80                             # the weekly read keeps the first 80 characters of each action
 NIGHTLY_BACK = 3                           # nightly also checks rows up to 3 days back that sit on the page
+PAGE = 100                                 # the Notion SQL tool returns at most 100 rows a call, whatever the LIMIT
+QUERIES = ("existing", "week_this", "week_prev")
 
 
 # ---------------------------------------------------------------- helpers
@@ -112,6 +115,75 @@ def load_results(path):
 def load_results_text(t):
     obj = json.loads(t)
     return obj.get("results", []) if isinstance(obj, dict) else obj
+
+
+# ---------------------------------------------------------------- SQL (read in pages of 100)
+# Every query has an ORDER BY that ends in a unique column ("url", or the GROUP BY columns), so OFFSET 0, 100, 200
+# ... walks the same order each call: no row is skipped and no page overlaps the one before.
+
+def paged(sql, offset=0):
+    """One page of a query: LIMIT 100 OFFSET <offset>."""
+    return "%s LIMIT %d OFFSET %d" % (sql, PAGE, int(offset))
+
+
+def _between(lo, hi):
+    return ' WHERE "date:Date:start" >= \'%s\' AND "date:Date:start" <= \'%s\'' % (lo, hi)
+
+
+def existing_sql(url, lo=None, hi=None):
+    """The dedupe read: the keys already in the Action Log, for the days lo..hi (every day when lo is None)."""
+    return ('SELECT "Key" AS k, "date:Date:start" AS d, "Block start" AS b, "Action" AS a, "url" AS u FROM "%s"%s '
+            'ORDER BY "Key", "url"' % (url, _between(lo, hi) if lo else ""))
+
+
+def week_this_sql(url, ws, we):
+    """Weekly SQL A: every row of the week, action text cut to WEEK_TEXT characters."""
+    return ('SELECT "date:Date:start" AS d, "Block start" AS b, "Minutes (est)" AS m, "Role" AS r, "Task" AS t, '
+            '"Kind" AS k, "AI" AS ai, "Source" AS s, substr("Action", 1, %d) AS a, "url" AS u FROM "%s"%s '
+            'ORDER BY "date:Date:start", "url"' % (WEEK_TEXT, url, _between(ws, we)))
+
+
+def week_prev_sql(url, ps, pe):
+    """Weekly SQL B: the week before, as totals per day, role and kind (one row per group, so 1, 2, 3 is unique)."""
+    return ('SELECT "date:Date:start" AS d, "Role" AS r, "Kind" AS k, SUM("Minutes (est)") AS m, COUNT(*) AS n '
+            'FROM "%s"%s AND "Source" = \'log\' AND "Role" != \'Not logged\' GROUP BY 1, 2, 3 ORDER BY 1, 2, 3'
+            % (url, _between(ps, pe)))
+
+
+def page_path(name, n):
+    return C.wpath("%s_%02d.json" % (name, n))
+
+
+def page_files(name):
+    """The saved pages of one query in order (<name>_01.json, <name>_02.json ...), up to the first gap."""
+    out = []
+    while os.path.exists(page_path(name, len(out) + 1)):
+        out.append(page_path(name, len(out) + 1))
+    return out
+
+
+def new_query(name, sql):
+    """Remember a query for `more` and clear any pages or merged file a rerun left behind."""
+    for p in page_files(name) + [C.wpath(name + ".json")]:
+        if os.path.exists(p):
+            os.remove(p)
+    q = C.read_json(C.wpath("queries.json"), {}) or {}
+    q[name] = sql
+    C.write_json(C.wpath("queries.json"), q)
+
+
+def merge_pages(pages):
+    """Pages of one query -> one list. A row that shows up twice (same url) is kept once."""
+    seen, out = set(), []
+    for rows in pages:
+        for r in rows:
+            u = r.get("u") if isinstance(r, dict) else None
+            if u:
+                if u in seen:
+                    continue
+                seen.add(u)
+            out.append(r)
+    return out
 
 
 def _sig(text):
@@ -196,32 +268,62 @@ def cmd_sql(a, cfg):
     if a.page:
         with open(a.page, encoding="utf-8") as f:
             rows = P.parse_page(f.read(), a.edited, today=day)["rows"]
-    if a.mode == "backfill" and rows:
-        lo, hi = window(a.mode, day, rows)
-        q = ('SELECT "Key" AS k, "date:Date:start" AS d, "Block start" AS b, "Action" AS a FROM "%s" '
-             'WHERE "date:Date:start" >= \'%s\' AND "date:Date:start" <= \'%s\' ORDER BY "date:Date:start" '
-             'LIMIT 1000' % (url, lo, hi))
-    elif a.mode == "backfill":
-        q = ('SELECT "Key" AS k, "date:Date:start" AS d, "Block start" AS b, "Action" AS a FROM "%s" '
-             'ORDER BY "date:Date:start" LIMIT 1000' % url)
+    if a.mode == "backfill" and not rows:
+        q = existing_sql(url)                 # no page to go by: every row in the database
+        lo, hi = "0000-01-01", day.isoformat()
     else:
         lo, hi = window(a.mode, day, rows)
-        q = ('SELECT "Key" AS k, "date:Date:start" AS d, "Block start" AS b, "Action" AS a FROM "%s" '
-             'WHERE "date:Date:start" >= \'%s\' AND "date:Date:start" <= \'%s\' LIMIT 1000' % (url, lo, hi))
+        q = existing_sql(url, lo, hi)
     if rows is not None and not rows:
         print("NO LOG FOUND: no '15 min log' heading on the page.")
-    if a.mode == "backfill" and not rows:
-        lo, hi = "0000-01-01", day.isoformat()
+    new_query("existing", q)
     C.write_json(C.wpath("state.json"), {"mode": a.mode, "day": day.isoformat(), "sql_window": [lo, hi]})
     print("LOG DAY: %s (%s)" % (day.isoformat(), day.strftime("%A")))
     print("WEEKLY REPORT DUE: %s" % ("yes" if day.weekday() == 6 else "no"))
     print("DATA SOURCE: %s" % url)
-    print("SQL: %s" % q)
-    print("SAVE THE RESULT TO: %s" % C.wpath("existing.json"))
+    print("SQL: %s" % paged(q, 0))
+    print("SAVE THE RESULT TO: %s" % page_path("existing", 1))
+    print("THEN RUN: python3 -m tools.time_ledger.run more existing   (after every page, until ALL PAGES READ)")
     return 0
 
 
+def cmd_more(a, cfg):
+    """After each saved page: a full page (100 rows) means there may be more, so print the next page's SQL. A
+    short page is the last one: join every page into <name>.json for the next step."""
+    base = (C.read_json(C.wpath("queries.json"), {}) or {}).get(a.name)
+    if not base:
+        print("NO QUERY: run the %s step first." % ("sql" if a.name == "existing" else "weekly-sql"))
+        return 2
+    files = page_files(a.name)
+    if not files:
+        print("NO PAGE SAVED: save the first page's result to %s" % page_path(a.name, 1))
+        return 2
+    pages = [load_results(p) for p in files]
+    n = len(files)
+    if len(pages[-1]) >= PAGE:
+        print("MORE: page %d has %d rows, so there may be more. Run the next page:" % (n, len(pages[-1])))
+        print("SQL: %s" % paged(base, n * PAGE))
+        print("SAVE THE RESULT TO: %s" % page_path(a.name, n + 1))
+        print("THEN RUN: python3 -m tools.time_ledger.run more %s" % a.name)
+        return 0
+    rows = merge_pages(pages)
+    out = C.wpath(a.name + ".json")
+    C.write_json(out, {"results": rows, "pages": n})
+    print("ALL PAGES READ: %d row(s) in %d page(s) -> %s" % (len(rows), n, out))
+    return 0
+
+
+def missing(*paths):
+    """A results file named but not there would read as 'nothing in Notion': stop instead."""
+    gone = [p for p in paths if p and not os.path.exists(p)]
+    for p in gone:
+        print("NOT FOUND: %s. Read every page of the SQL first (run `more` until ALL PAGES READ)." % p)
+    return bool(gone)
+
+
 def cmd_prepare(a, cfg):
+    if missing(a.existing):
+        return 2
     with open(a.page, encoding="utf-8") as f:
         raw = f.read()
     day = C.parse_day(a.day) if a.day else work_day()
@@ -432,16 +534,14 @@ def cmd_weekly_sql(a, cfg):
     ws, we = weekly_days(day)
     ps, pe = ws - dt.timedelta(days=7), we - dt.timedelta(days=7)
     url = ds_url(cfg)
-    qa = ('SELECT "date:Date:start" AS d, "Block start" AS b, "Minutes (est)" AS m, "Role" AS r, "Task" AS t, '
-          '"Kind" AS k, "AI" AS ai, "Source" AS s, substr("Action", 1, %d) AS a FROM "%s" '
-          'WHERE "date:Date:start" >= \'%s\' '
-          'AND "date:Date:start" <= \'%s\' LIMIT 1000' % (WEEK_TEXT, url, ws, we))
-    qb = ('SELECT "date:Date:start" AS d, "Role" AS r, "Kind" AS k, SUM("Minutes (est)") AS m, COUNT(*) AS n '
-          'FROM "%s" WHERE "date:Date:start" >= \'%s\' AND "date:Date:start" <= \'%s\' AND "Source" = \'log\' '
-          'AND "Role" != \'Not logged\' GROUP BY 1, 2, 3' % (url, ps, pe))
+    qa, qb = week_this_sql(url, ws, we), week_prev_sql(url, ps, pe)
+    new_query("week_this", qa)
+    new_query("week_prev", qb)
     print("WEEK: %s to %s (compared with %s to %s)" % (ws, we, ps, pe))
-    print("SQL A (this week, save to %s): %s" % (C.wpath("week_this.json"), qa))
-    print("SQL B (week before, save to %s): %s" % (C.wpath("week_prev.json"), qb))
+    print("SQL A (this week, save page 1 to %s): %s" % (page_path("week_this", 1), paged(qa, 0)))
+    print("SQL B (week before, save page 1 to %s): %s" % (page_path("week_prev", 1), paged(qb, 0)))
+    print("THEN RUN: python3 -m tools.time_ledger.run more week_this (and more week_prev) after every page, "
+          "until each prints ALL PAGES READ")
     return 0
 
 
@@ -488,6 +588,8 @@ def cmd_weekly(a, cfg):
         prev = [r for r in rows if ps.isoformat() <= r["date"] <= pe.isoformat()]
         hist = R.distraction_by_day([r for r in rows if r["date"] < ps.isoformat()])
     else:
+        if missing(a.this, a.prev):
+            return 2
         this = [R.norm_row(r) for r in load_results(a.this)]
         this += just_written(this, ws, we)
         prev = [R.norm_row(dict(r, s="log", a="(week total)")) for r in load_results(a.prev)]
@@ -530,6 +632,8 @@ def main(argv=None):
     s.add_argument("--day")
     s.add_argument("--page", help="the copied log (page.md): widens the nightly window to the days it holds")
     s.add_argument("--edited")
+    mo = sub.add_parser("more")
+    mo.add_argument("name", choices=QUERIES)
     p = sub.add_parser("prepare")
     p.add_argument("--page", required=True)
     p.add_argument("--existing")
@@ -554,7 +658,7 @@ def main(argv=None):
     w.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
     cfg = C.load_config()
-    fn = {"sql": cmd_sql, "prepare": cmd_prepare, "build": cmd_build, "finish": cmd_finish,
+    fn = {"sql": cmd_sql, "more": cmd_more, "prepare": cmd_prepare, "build": cmd_build, "finish": cmd_finish,
           "weekly-sql": cmd_weekly_sql, "weekly": cmd_weekly}[a.cmd]
     if a.cmd == "weekly" and not a.from_page and not (a.this and a.prev):
         ap.error("weekly needs --this and --prev, or --from-page")

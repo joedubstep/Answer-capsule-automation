@@ -1,6 +1,6 @@
 ---
 name: copy_check
-description: Check prospect or client copy against Joey's locked copy rules (dashes, US English, buzzwords, banned words, price, stats, invented results, merge fields, reading grade). Use when someone says "check this copy", "is this on brand", "run the copy checker", or before saving any draft a prospect or client will read. Also used to rebuild the Copy Checker page when the rules change.
+description: Check prospect or client copy against Joey's locked copy rules (dashes, US English, buzzwords, banned words, price, merge fields, reading grade). Use when someone says "check this copy", "is this on brand", "run the copy checker", or before saving any draft a prospect or client will read. Also used to rebuild the Copy Checker page when the rules change.
 ---
 
 # Copy Checker

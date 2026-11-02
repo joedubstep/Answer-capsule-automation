@@ -11,7 +11,7 @@ BY_ID = {r["id"]: r for r in RAW["rules"]}
 # Every rule the build spec and Joey's locked rules call for.
 REQUIRED = [
     "dash", "buzzword", "british_spelling", "british_ise", "care_home", "patients", "leads_for_families",
-    "cold_outreach_words", "bad_time_ask", "price_before_call", "statistics", "invented_results", "emoji",
+    "cold_outreach_words", "bad_time_ask", "price_before_call", "emoji",
     "tldr", "idiom", "needy_hedge", "merge_field", "lowercase_start", "long_sentence", "reading_grade_high",
     "reading_grade_too_high", "multi_question", "exclamation", "missing_link", "missing_optout",
 ]

@@ -102,8 +102,8 @@ class RenderTest(FakeGHL):
 
     def test_no_dashes_and_no_forbidden_words(self):
         low = self.h.lower()
-        self.assertNotIn("—", self.h)
-        self.assertNotIn("–", self.h)
+        self.assertNotIn("\u2014", self.h)
+        self.assertNotIn("\u2013", self.h)
         self.assertNotIn("chargeback", low)
         self.assertNotIn("recording", low)
 
@@ -132,6 +132,14 @@ class RenderTest(FakeGHL):
         self.assertIn("navigator.clipboard", self.h)
         self.assertIn("execCommand('copy')", self.h)
         self.assertIn("'Selected'", self.h)
+
+    def test_next_week_note(self):
+        import datetime as dt
+        nxt = self.evidence(now=fx.NOW + dt.timedelta(days=7), prev=self.ev["state"])
+        h = render.render(nxt)
+        self.assertIn("Rows already listed on the Sun Nov 8 page are left out; each row shows once. Missed a Sunday?", h)
+        again = self.evidence(prev=self.ev["state"], entered_through="2026-10-25")
+        self.assertIn("Every finished row after Sun Oct 25 is listed again, as asked", render.render(again))
 
     def test_test_run_eyebrow(self):
         ev = dict(self.ev, location_key="agc")

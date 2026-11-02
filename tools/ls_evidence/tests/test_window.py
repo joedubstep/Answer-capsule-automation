@@ -84,6 +84,7 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(b["need"], 16)
         self.assertEqual(b["pace"], round(14 * 90 / 76))
         self.assertIn("14 of 30 qualified calls with 14 days left", b["line"])
+        self.assertIn("At this pace the window ends with about 17 calls.", b["line"])
         self.assertIn("80% of due boxes done", b["line"])
         self.assertIn("Meta and Mercury", b["line"])
 

@@ -14,6 +14,8 @@ The Notion page is plain lines, one per sender (bullets are fine):
     coach <Name>: <address or domain>
     vendor <Name>: <address or domain>
     ignore: <address or domain>
+Notion shows each address as a mailto link ([a@b.com](mailto:a@b.com)); links and mailto: are stripped and each
+(kind, label, address) is kept once.
 
   python3 -m tools.inbox_desk.settings --from-text /tmp/inbox_desk/settings.md --out /tmp/inbox_desk/private.json
 """
@@ -33,6 +35,34 @@ PRIVATE = os.path.join(OUT_DIR, "private.json")
 _LINE = re.compile(r"^\s*(?:[-*\u2022]\s*)?(?:\[[ x]\]\s*)?(own|client|coach|vendor|ignore)\b\s*([^:]*?)\s*:\s*(.+?)\s*$",
                    re.I)
 _ADDR = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+|(?<![@\w])(?:[\w-]+\.)+[a-z]{2,}(?![\w@])", re.I)
+# Notion stores an address as a mailto link: [a@b.com](mailto:a@b.com), or <mailto:a@b.com>. Read each link once.
+_MD_LINK = re.compile(r"\[([^\]]*)\]\(\s*<?([^)\s>]*)>?\s*\)")
+_AUTOLINK = re.compile(r"<\s*((?:mailto:|https?://)?[^<>\s]+)\s*>", re.I)
+_SCHEME = re.compile(r"\b(?:mailto:|https?://)", re.I)
+
+
+def _link_text(m):
+    """A markdown link -> its visible text, or the target when the text holds no address."""
+    text, target = m.group(1), m.group(2)
+    return text if _ADDR.search(text) else target
+
+
+def clean_line(raw):
+    """One page line -> plain text: markdown links and mailto: dropped, markdown marks removed. Underscores inside
+    a word (first_last@example.com) and escaped ones (first\\_last) stay part of the address."""
+    line = re.sub(r"\\([\\`*_\[\]()<>#.!-])", r"\1", raw)
+    line = _MD_LINK.sub(_link_text, line)
+    line = _AUTOLINK.sub(r"\1", line)
+    line = _SCHEME.sub("", line)
+    line = re.sub(r"[`*]", "", line)
+    return re.sub(r"(?<![\w.+-])_+|_+(?![\w@.-])", "", line)
+
+
+def _add(lst, vals):
+    """Append each value once, in order (a link repeats the address it shows)."""
+    for v in vals:
+        if v not in lst:
+            lst.append(v)
 
 
 def _load(path, default=None):
@@ -51,8 +81,7 @@ def parse_settings_text(text):
     """The private Notion page text -> {"own": [...], "clients": {...}, "coaches": {...}, "vendors": {...}, "ignore": [...]}."""
     out = {"own": [], "clients": {}, "coaches": {}, "vendors": {}, "ignore": []}
     for raw in (text or "").splitlines():
-        line = re.sub(r"[`*_]", "", raw)
-        m = _LINE.match(line)
+        m = _LINE.match(clean_line(raw))
         if not m:
             continue
         kind, name, rest = m.group(1).lower(), m.group(2).strip(), m.group(3)
@@ -60,12 +89,12 @@ def parse_settings_text(text):
         if not vals:
             continue
         if kind in ("own", "ignore"):
-            out[kind] += [v for v in vals if v not in out[kind]]
+            _add(out[kind], vals)
             continue
         group = {"client": "clients", "coach": "coaches", "vendor": "vendors"}[kind]
         key = slug(name) if name else "other"
         ent = out[group].setdefault(key, {"label": name or key, "senders": []})
-        ent["senders"] += [v for v in vals if v not in ent["senders"]]
+        _add(ent["senders"], vals)
     return out
 
 
@@ -101,7 +130,7 @@ def load_rules(private=None, config=None, senders=None):
             cur = target.setdefault(key, {"label": ent.get("label") or key, "domains": []})
             cur.setdefault("senders", [])
             for v in ent.get("senders") or []:
-                (cur["senders"] if "@" in v else cur["domains"]).append(v)
+                _add(cur["senders"] if "@" in v else cur["domains"], [v])
     return rules
 
 

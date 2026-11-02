@@ -150,6 +150,19 @@ class PortalTest(FakeGHL):
         self.assertFalse(p["first_run"])
         self.assertEqual(ev["state"]["entered_through"], "2026-10-25")
 
+    def test_entered_through_on_demand_brings_back_a_skipped_week(self):
+        ev = self.evidence()                                   # this page listed everything, Joey typed nothing
+        again = self.evidence(prev=ev["state"], entered_through="2026-10-25")
+        names = {r["hash"]: r["first"] for r in again["leads"]}
+        self.assertEqual(sorted(names[h] for h in again["portal"]["new_leads"]), ["Casey", "Lee", "Robin", "Taylor"])
+        self.assertTrue(again["portal"]["relisted"])
+        calls = {r["hash"]: r["first"] for r in again["calls"]}
+        self.assertEqual(sorted(calls[h] for h in again["portal"]["new_calls"]), ["Robin", "Taylor"])
+        # the week after, with no date given, nothing comes back twice
+        later = self.evidence(now=fx.NOW + dt.timedelta(days=7), prev=again["state"])
+        self.assertEqual([names.get(h) for h in later["portal"]["new_leads"]], ["Jordan"])
+        self.assertEqual(later["portal"]["entered_through"], "2026-10-25")
+
     def test_prev_from_another_location_is_ignored(self):
         ev = self.evidence()
         state = dict(ev["state"], loc="somewhere-else")
