@@ -27,7 +27,7 @@ Final message: one line, as the skill says.
 ```
 
 ## Before the first scheduled run (deploy step)
-1. Run it once on demand in the Surven HQ environment ("lead suite evidence now") so it publishes the first page, then
+1. Done 2026-11-02: the page exists and its link is in `config/surven.json` `artifacts.ls_evidence`. (Originally: run it once on demand in the Surven HQ environment, then
    add its link to `config/surven.json` as a new key `artifacts.ls_evidence` (the key does not exist yet). Until then each run publishes a new page and
    cannot tell which rows were already listed.
 2. Check the run's `fields:` line. If an STL field shows as missing, its name in HQ differs from what
