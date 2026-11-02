@@ -213,9 +213,9 @@ def report_body(rep):
 
 def render_report(rep, short):
     title = "%s Weekly Report" % short
-    return ("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">"
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-            "<title>%s</title><style>%s%s</style></head><body><main class=\"wrap\">%s</main></body></html>\n" % (
+    # Artifact page contract: no doctype/html/head/body (the publisher wraps the page); title + gutter tag first.
+    return ("<title>%s</title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n"
+            "<style>%s%s</style>\n<main class=\"wrap\">%s</main>\n" % (
                 E(title), BASE_CSS, REPORT_CSS, report_body(rep)))
 
 
@@ -421,10 +421,10 @@ def report_section(view):
     url = view.get("report_url") or ""
     if url:
         link = ('<a class="copy solid" href="%s" target="_blank" rel="noopener">Open report page</a>' % E(url, quote=True))
-        how = "open the report page and use Print, Save as PDF"
+        how = "open the report page and send the client a screenshot of it"
     else:
         link = ""
-        how = "open the report page (its link is in this run's final message) and use Print, Save as PDF"
+        how = "open the report page (its link is in this run's final message) and send the client a screenshot of it"
     return ('<section><div class="sechead"><h2>Owner report</h2>%s</div><p class="muted">Check it, then send it '
             'yourself: %s, or send the short text. Never share this desk page with the client.</p>'
             '<div class="card"><div class="sechead"><h3>Short text</h3>%s</div>%s%s</div>'
@@ -515,10 +515,9 @@ def render_page(view):
     head = ('<header style="display:grid;gap:6px"><p class="eyebrow">Client Desk, %s</p><h1>%s</h1>'
             '<p class="stamp">Last updated %s. %s%s.</p></header>' % (
                 E(d["label"]), E(d["label"]), E(stamp(d["now"])), E(label), " (dry run)" if view.get("dry_run") else ""))
-    return ("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">"
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>%s</title>"
-            "<style>%s%s%s</style></head><body><main class=\"wrap\">%s<p class=\"top\">%s</p>%s%s%s</main>"
-            "<script>%s</script></body></html>\n" % (
+    return ("<title>%s</title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n"
+            "<style>%s%s%s</style>\n<main class=\"wrap\">%s<p class=\"top\">%s</p>%s%s%s</main>\n"
+            "<script>%s</script>\n" % (
                 E(title), BASE_CSS, PAGE_CSS, REPORT_CSS, head, E(top_line(view)), numbers(view), body, footer(view), JS))
 
 

@@ -47,7 +47,7 @@ this repo for "client desk agc now" or "client desk splendor now".
 - **The owner report**: what came in, how fast families were reached, tours, move-ins against the goal, the partner
   program, what Surven did this week (calls, texts and emails sent), and next week's plan. Plain words, real counts.
   A zero means none; nothing is estimated. Calls GoHighLevel cancelled before they rang are not counted. Open the
-  report page, check it, then Print and Save as PDF to send it, or
+  report page, check it, then send the client a screenshot of it, or
   copy the short text into a text or email. Never send the desk link itself to a client: it lists partners and
   callers.
 

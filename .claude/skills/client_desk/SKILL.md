@@ -84,7 +84,7 @@ Run everything from the repo root. Files land in `/tmp/client_desk/<client>/`.
     one-line text to the owner asking which rooms are open.
   - Friday: the owner report preview, a link to the report page, and the short text with a copy button.
 - **The report page** (`artifacts.client_desk_<client>_report`, private to Joey, Friday or full runs): the owner
-  report in Surven's brand. Joey opens it, checks it, and sends it as a PDF (Print, Save as PDF) or sends the short
+  report in Surven's brand. Joey opens it, checks it, and sends the client a screenshot of it or sends the short
   text. Never share the desk link with a client: it lists partners and callers.
 - **One push notification** to Joey.
 - Working files in `/tmp/client_desk/<client>/` only. Nothing is written to GoHighLevel, Notion, Gmail or this repo.

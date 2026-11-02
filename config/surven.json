@@ -80,13 +80,13 @@
     "surven.ai"
   ],
   "artifacts": {
-    "hq_desk": "",
-    "client_desk_agc": "",
-    "client_desk_splendor": "",
-    "copy_checker": "",
+    "hq_desk": "https://claude.ai/artifact/2VJe4DYni7hfBkFbNKYkvQ",
+    "client_desk_agc": "https://claude.ai/artifact/QDXeEHKXhjz175jHyPvdrj",
+    "client_desk_splendor": "https://claude.ai/artifact/C3uTows1CeEjHRUNVXEw2Q",
+    "copy_checker": "https://claude.ai/artifact/XWNCRaE5maXKVnQBfaSxxC",
     "time_ledger": "",
-    "client_desk_agc_report": "",
-    "client_desk_splendor_report": ""
+    "client_desk_agc_report": "https://claude.ai/artifact/1mPdNAiPTvUJfi29pYQMnh",
+    "client_desk_splendor_report": "https://claude.ai/artifact/BnsJFgSxGu1zxSsrnpQrhz"
   },
   "campaign": {
     "price_raise_deadline_et": "2026-11-18T20:00",
