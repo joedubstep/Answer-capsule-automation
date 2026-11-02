@@ -17,6 +17,7 @@ The plain-English guide (what each tool does, links to its pages, what to do nex
 | `inbox_desk` | Inbox triage: in-thread reply drafts for cold-email replies, one-page plan PDFs, learning capture, one digest. | 8am and 4pm ET weekdays | B |
 | `time_ledger` | Files the 15-minute log into a Notion database with role, task and estimated minutes; weekly time report. | 11:45pm ET nightly | B |
 | `lead_list` | Builds the next state's lead batch for the cold-email engine, deduped against everything already emailed. | On demand, on the operator's PC | On demand |
+| `ls_evidence` | Lead Suite refund evidence: scores every lead's portal boxes and every booked call from GHL time stamps, shows the refund scoreboard, and lists only the portal rows still to type in. | 6:00am ET Sundays | A |
 
 **Class A** routines need only GoHighLevel (through the environment's proxy key), the web and artifact pages, so
 they run as soon as they are scheduled. **Class B** routines also need Gmail, Notion, Fathom or Calendar
@@ -37,7 +38,7 @@ CREDIT-LEDGER.md               build cost estimates
 
 ## Tests
 
-From the repo root: `python3 -m unittest discover -s tools/<tool>/tests -t .` (532 tests across the 7 tools,
+From the repo root: `python3 -m unittest discover -s tools/<tool>/tests -t .` (688 tests across the 8 tools,
 offline, synthetic fixtures only).
 
 ## Privacy
