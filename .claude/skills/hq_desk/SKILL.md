@@ -43,6 +43,10 @@ commands, and the commands only work from the repo root). Working files land in 
      on the call (`context.offers`), what Joey last sent (`context.last_from_joey`), the plan log, and the
      deadline (`context.price_raise`) when the lead has the `price raise` chip. Answer what they asked, in order.
    - **Owed items** (`owed`, each with its index `i`): deliver each one you can, for every lead in the brief.
+     An owed `text` is the exact message the lead will read, written to them in Joey's voice (for example
+     "Here is what I found on the Baltimore City short stay license: ..."). It is never a label for the task
+     like "His plan and price". If it cannot be written without something only Joey has, leave `text` out and
+     put what is missing in `missing`.
      For a regulation or licensing question, use WebSearch, read the primary source (the state agency, the
      statute, the county office), and put the links in `sources`. Never invent a fact or a result. Surven has no
      client results yet, so say "market benchmark" if a number is needed. If the item needs something only Joey

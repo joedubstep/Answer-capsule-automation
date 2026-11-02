@@ -272,10 +272,18 @@ def pitched(offers):
 
 
 EMPTY_RX = re.compile(r"^\s*((none|nothing)( yet| owed| now| right now)?|n/?a|-+)\s*\.?\s*$", re.I)
+# "nothing open (Joey re-gave the price on 10/30)" and the like: the planner saying nothing is owed.
+NOTHING_RX = re.compile(r"^\s*(nothing|none)\b( (open|owed|due|pending|left))?\b", re.I)
+# The lead owes it, not Joey ("she will check our reviews").
+THEY_OWE_RX = re.compile(r"^\s*(she|he|they|owner|the owner)\s+(will|said she|said he|is going to|plans to)\b", re.I)
 
 
 def is_empty(s):
-    return not str(s or "").strip() or bool(EMPTY_RX.match(str(s)))
+    t = str(s or "").strip(" .-;|")
+    if not t or EMPTY_RX.match(t) or NOTHING_RX.match(t) or THEY_OWE_RX.match(t):
+        return True
+    # a split fragment like "since" or "and" carries no promise
+    return len(re.findall(r"[A-Za-z]{2,}", t)) < 2
 
 
 def parse_owed_field(text, now):
@@ -487,8 +495,10 @@ def build_lead(cid, contact, opps, block, events, stage_name, now, deadline, raw
     parked = is_parked(fields, stages, now)
     agent_stage = norm(flat(fields.get("stage")))
     first = flat(fields.get("preferred") or contact.get("firstName") or "").strip()
-    if not first:
+    if not first or "@" in first:
         first = (opps[0].get("contactName") or "").split(" ")[0] if opps else ""
+    if "@" in first or re.fullmatch(r"[\d\s()+.-]*", first or ""):
+        first = "Owner"  # the record has only an email or a phone as its name
     on_raise = "price-raise" in tags and "price-raise-no" not in tags
     raise_live = bool(deadline and not deadline["passed"])
     beds = first_int(fields.get("beds"))
