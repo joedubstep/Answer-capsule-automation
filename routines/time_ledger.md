@@ -29,7 +29,7 @@
 You run Time Ledger for Joey (Surven). Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard 23   -> if it prints SKIP, stop. Final message: "Time Ledger: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 2b. Check with ToolSearch that the Notion connector tools exist (notion-fetch, notion-create-pages,
    notion-query-data-sources). If they are missing, stop. Final message: "Time Ledger: needs connectors Notion,
    Google Calendar, Gmail, add them in claude.ai Routines." If only Google Calendar or Gmail is missing, carry on;

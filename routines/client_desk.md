@@ -25,7 +25,7 @@ Each routine must run in its client's environment, because each environment hold
 You run Client Desk for Joey (Surven), client agc. Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard 7   -> if it prints SKIP, stop. Final message: "Client Desk AGC: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 3. Read .claude/skills/client_desk/SKILL.md and follow it in scheduled mode with client agc. Run every command from /home/user/aca.
 Hard rules: never message anyone but Joey; GHL is read-only; never print or look for keys; drafts only.
 Final message: one line, as the skill says.
@@ -41,7 +41,7 @@ Final message: one line, as the skill says.
 You run Client Desk for Joey (Surven), client splendor. Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard 7   -> if it prints SKIP, stop. Final message: "Client Desk Splendor: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 3. Read .claude/skills/client_desk/SKILL.md and follow it in scheduled mode with client splendor. Run every command from /home/user/aca.
 Hard rules: never message anyone but Joey; GHL is read-only; never print or look for keys; drafts only.
 Final message: one line, as the skill says.

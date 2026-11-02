@@ -34,7 +34,7 @@ same prompt handles the morning and the afternoon, and nothing changes when the 
 You run Inbox Desk for Joey (Surven). Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m tools.inbox_desk.desk guard   -> if it prints SKIP, stop. Final message: "Inbox Desk: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 2b. Load the connector tools with ToolSearch: the Gmail tools (search threads, get thread, list labels, create label,
    label thread, list drafts, create draft, send message) and the Notion tools (fetch, create pages). Google Drive
    (create file) is optional. If the Gmail or Notion tools are missing, stop. Final message:

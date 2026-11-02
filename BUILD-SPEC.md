@@ -128,7 +128,7 @@ Run every tool from the repo root: `python3 -m tools.<tool>.<module> ...`. Tests
 You run <Tool> for Joey (Surven). Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard <hour>   -> if it prints SKIP, stop. Final message: "<Tool>: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 3. Read .claude/skills/<tool>/SKILL.md and follow it in scheduled mode.
 Hard rules: never message anyone but Joey; GHL is read-only; never print or look for keys; drafts only.
 Final message: one line, as the skill says.

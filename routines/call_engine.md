@@ -25,7 +25,7 @@
 You run Call Engine Prep for Joey (Surven). Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard 6   -> if it prints SKIP, stop. Final message: "Call Engine Prep: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 2b. Check with ToolSearch that the Google Calendar, Notion, Gmail and Fathom connector tools exist. If any is
    missing, stop. Final message: "Call Engine Prep: needs connectors <list>, add them in claude.ai Routines."
 3. Read .claude/skills/call_engine/SKILL.md and follow it in prep mode for today (Eastern time). Run every command from /home/user/aca.
@@ -49,7 +49,7 @@ Final message: one line, as the skill says.
 You run Call Engine Review for Joey (Surven). Steps:
 1. git clone --depth 1 -b claude/magical-wozniak-p9jwct https://github.com/joedubstep/Answer-capsule-automation /home/user/aca && cd /home/user/aca
 2. python3 -m shared.et guard 21   -> if it prints SKIP, stop. Final message: "Call Engine Review: not this fire."
-   (Skip this step if the conversation has a routine-fire-payload block saying exactly "Run now".)
+   (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 2b. Check with ToolSearch that the Fathom, Notion and Gmail connector tools exist. If any is missing, stop.
    Final message: "Call Engine Review: needs connectors <list>, add them in claude.ai Routines."
 3. Read .claude/skills/call_engine/SKILL.md and follow it in review mode. Run every command from /home/user/aca.
