@@ -1,20 +1,14 @@
 # Build spec for the Surven automation tools
 
-This file is for the agents and people who build and maintain these tools. Joey reads `README.md`, not this.
+This file is for the agents and people who build and maintain these tools. Joey reads the Notion Automations page, not this.
 
 ## Why these tools exist
 
-Joey Gargiulo runs Surven, a small agency that fills empty beds for assisted living homes. His 15-minute log
-(415 actions, 10/15 to 11/1) and his live systems show three things:
-
-1. Planning is already automated. Three follow-up agents and a Morning Sales Brief run every morning.
-2. The work AFTER the plan is the bottleneck. That covers approvals, the YOU OWE promises (17 open, oldest 42
-   days), cold-email replies nobody worked (22 sitting at "Replied"), call prep and call review (about 4 hours
-   around a single 24-minute call), weekly client admin, and log upkeep.
-3. Sales are stalled. November shows $0 against a $10K goal, there are no discovery calls booked in the next
-   14 days, and 11 owners have been pitched and are waiting.
-
-Every tool must save Joey real minutes or move money. If it does neither, don't build it.
+Joey runs Surven, a small agency that fills empty beds for assisted living homes. A study of his 15-minute log
+and his live systems showed that planning is already automated (follow-up agents and a morning brief), and that
+the work AFTER the plan is the bottleneck: approvals, promised deliverables, unanswered cold-email replies, call
+prep and call review, weekly client admin, and log upkeep. Every tool must save Joey real minutes or move money.
+If it does neither, don't build it. (Business numbers live in private Notion, never in this public repo.)
 
 Sources the builders read (scratchpad, read-only, may hold personal data; NEVER copy personal data into this repo):
 `/tmp/claude-0/-home-user-Answer-capsule-automation/fa962b56-ce6a-4c38-9e17-4366affe22db/scratchpad/`

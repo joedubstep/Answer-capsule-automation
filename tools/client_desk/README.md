@@ -13,8 +13,8 @@ this repo for "client desk agc now" or "client desk splendor now".
   `artifacts.client_desk_splendor`). It updates in place, so keep it pinned.
 - **The report page** for each client, updated on Fridays (`artifacts.client_desk_agc_report` and
   `artifacts.client_desk_splendor_report`). This is the one you send to the owner.
-- **One push notification** each run with the top line, like "AGC Monday: 40 partners to call, 13 check-ins; open
-  rooms email ready for 13; callers: 6 robocall, 2 unclear."
+- **One push notification** each run with the top line, like "Monday: 12 partners to call, 5 check-ins; open
+  rooms email ready for 8; callers: 2 robocall, 1 unclear." (made-up example numbers)
 
 ## What is on the page
 

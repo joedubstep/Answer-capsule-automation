@@ -50,8 +50,8 @@ cold reply since September 23 that nobody answered yet.
 ## Minutes saved
 
 About 2 hours a week. That is the inbox checks several times a day, writing each cold reply by hand, building and
-sending the plans homes asked for, and copying coach lessons into notes. It also stops replies from sitting
-unanswered: 22 owners replied well and only 1 meeting was booked.
+sending the plans homes asked for, and copying coach lessons into notes. It also stops good replies from sitting
+unanswered.
 
 ## Good to know
 

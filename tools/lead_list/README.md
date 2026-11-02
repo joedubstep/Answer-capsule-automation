@@ -4,10 +4,8 @@ Builds the next state's batch of homes for your cold email. Cold email is your o
 and the queue is running low, so this keeps it full.
 
 ## Why you need it
-- On Nov 2 the queue had **1,614 homes** whose mailbox passed the check and can get email 1.
-- The last 7 days used about **65 new homes a day**. That is about 25 days left.
-- When the 7 .com senders reach 40 a day (around Nov 8), the pace can climb toward 140 a day. At that pace the
-  queue runs dry in about **11 days**.
+- The queue of homes cleared for email 1 runs out within weeks at the current sending pace, and faster once
+  the senders ramp up. Run `python3 -m tools.lead_list.runway --data <state data folder>` for today's numbers.
 - Until now, a new state took a long PC Claude session by hand: the license list, phones, emails, the copy for
   each home, then loading it. This tool does all of that in one run.
 - Each 100 new homes with an email adds about half a day of sending at 140 a day (about a day at today's pace),
