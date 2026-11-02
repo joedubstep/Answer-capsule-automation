@@ -78,6 +78,10 @@ In claude.ai, open Routines, find "Time Ledger" and switch it off. Or ask Claude
 - Code: `parse.py` (page to rows), `classify.py` + `lexicon.py` + `model.json` (labels), `minutes.py`
   (estimates), `infer.py` + `ghl_calls.py` (blank blocks), `report.py` (daily and weekly), `run.py` (the stages
   the skill calls), `evaluate.py` (agreement with a labeled history).
+- Notion SQL reads: the query tool returns at most 100 rows a call, even with a bigger LIMIT. Every SQL in
+  `run.py` has a fixed ORDER BY (ending in the unique `url` column, or the GROUP BY columns) and is read in pages
+  of `LIMIT 100 OFFSET 0, 100, 200 ...`. `run.py more <query>` counts each saved page, prints the next page's SQL
+  while pages come back full, and joins the pages (once per url) after the first short page.
 - Tests: `python3 -m unittest discover -s tools/time_ledger/tests -t .` (synthetic page in the same format as
   the real one; no real content).
 - Retrain: `python3 -m tools.time_ledger.classify train --csv <labeled CSV outside the repo> --names <extra

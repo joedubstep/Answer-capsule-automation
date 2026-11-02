@@ -51,14 +51,25 @@ them.
    - Never edit the To-Do page.
 2. **What to compare.**
    `python3 -m tools.time_ledger.run sql --mode nightly --page /tmp/time_ledger/page.md --edited <page_last_edited_at>`
-   (`--mode backfill` in backfill). It prints `LOG DAY`, `WEEKLY REPORT DUE`, `DATA SOURCE` and one `SQL` line.
-3. **What is already logged.** Notion query data sources with exactly
-   `{"data": {"data_source_urls": ["<DATA SOURCE>"], "query": "<SQL>"}}`. Write the tool's JSON result (the
-   object with `results`) to `/tmp/time_ledger/existing.json`. If `has_more` is true, run it again with
-   ` OFFSET 1000` added at the end of the SQL and merge the `results` lists.
+   (`--mode backfill` in backfill). It prints `LOG DAY`, `WEEKLY REPORT DUE`, `DATA SOURCE`, one `SQL` line (the
+   first page: it ends in `LIMIT 100 OFFSET 0`) and `SAVE THE RESULT TO` (`/tmp/time_ledger/existing_01.json`).
+3. **What is already logged (every page).** The Notion SQL tool returns at most 100 rows a call, even when the
+   SQL asks for more. So every SQL here has a fixed `ORDER BY` and is read in pages of 100: OFFSET 0, 100, 200 and
+   so on, until a page comes back with fewer than 100 rows. Loop:
+   a. Notion query data sources with exactly
+      `{"data": {"data_source_urls": ["<DATA SOURCE>"], "query": "<SQL>"}}`.
+   b. Write the tool's JSON result (the object with `results`) to the `SAVE THE RESULT TO` path. If the tool
+      result was saved to a file, copy that file there.
+   c. `python3 -m tools.time_ledger.run more existing`. It counts the page. `MORE` means the page was full: it
+      prints the next page's `SQL` (the next OFFSET) and `SAVE THE RESULT TO` path (`existing_02.json`, then
+      `existing_03.json` ...). Go back to a. with those. `ALL PAGES READ` means that was the last page: Python has
+      joined every page, in order, into `/tmp/time_ledger/existing.json`.
+   Fetch every page and let `more` join them before step 4. Never skip a page, never edit the SQL or the OFFSET
+   yourself, and never join pages by hand. `has_more` does not matter here; the row count decides.
 4. **Parse, label, dedupe.**
    `python3 -m tools.time_ledger.run prepare --page /tmp/time_ledger/page.md --existing /tmp/time_ledger/existing.json --mode nightly --edited <page_last_edited_at>`
    (`--mode backfill` in backfill).
+   - `NOT FOUND`: step 3 did not reach `ALL PAGES READ`. Go back and finish it; never run without it.
    - `NO LOG FOUND`: go to step 9.
    - `DATE CHECK` lines: a heading whose date repeats or is out of order, or a section that runs into a new
      morning. Python already dated those rows (for example the top duplicate "15 min log 11/1" read as the page's
@@ -114,9 +125,14 @@ them.
 **Weekly report** (when step 2 printed `WEEKLY REPORT DUE: yes`, or in weekly mode):
 
 10. `python3 -m tools.time_ledger.run weekly-sql` (weekly mode on a weekday: same command; it picks the last full
-    week). Run `SQL A` and `SQL B` with Notion query data sources on the same data source, the same way as step 3.
-    Save the JSON results to `/tmp/time_ledger/week_this.json` and `/tmp/time_ledger/week_prev.json` (merge pages
-    if `has_more`).
+    week). It prints `SQL A` and `SQL B`, each the first page (`LIMIT 100 OFFSET 0`) with the path to save it to.
+    Read each one in pages with Notion query data sources on the same data source, exactly like step 3:
+    - SQL A: save page 1 to `/tmp/time_ledger/week_this_01.json`, then run
+      `python3 -m tools.time_ledger.run more week_this` after every page and follow it until `ALL PAGES READ`.
+    - SQL B: save page 1 to `/tmp/time_ledger/week_prev_01.json`, then
+      `python3 -m tools.time_ledger.run more week_prev` the same way.
+    Python joins the pages into `/tmp/time_ledger/week_this.json` and `/tmp/time_ledger/week_prev.json`. Do not go
+    to step 11 until both printed `ALL PAGES READ`.
 11. `python3 -m tools.time_ledger.run weekly --this /tmp/time_ledger/week_this.json --prev /tmp/time_ledger/week_prev.json`
     (dry run: add `--dry-run`; if the database is still empty, use `--from-page` instead, which reads this run's
     parse). It prints `WEEKLY READY: <title>`, a `HEADLINE` and the two files below. `EMAIL BLOCKED` means the

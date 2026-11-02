@@ -118,7 +118,8 @@ stop. Final message: `Call Engine: needs connectors <list>, add them in claude.a
    For **backfill** use `WHERE createdTime >= '<since date>'` with no LIMIT on both instead (a row for a call
    after that date cannot be older than the call), so no older row is missed.
    Write `/tmp/call_engine/library.json` as `{"sales": <results>, "ls": <results>}`. Rows whose Link is a
-   share link or empty are matched by the date and name in their `Call` title (see `meetings.py`).
+   share link or empty are matched by the date in their `Call` title plus a shared person's name or the same
+   coaching word (mastermind, one-on-one ...), never by the date alone (see `meetings.py`).
 2. **Fathom list.** `list_meetings` with `created_after` = 4 days ago (review), the backfill date (backfill),
    `max_pages` 3 (10 for backfill). Save the text exactly to `/tmp/call_engine/fathom_list.txt`.
 3. **New recordings.**

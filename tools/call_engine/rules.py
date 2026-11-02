@@ -4,7 +4,7 @@
 Everything here is matched case-insensitively against single sentences of a Fathom transcript.
 A regex here finds EVIDENCE with a timestamp. The model still makes the call on the scorecard.
 
-  FLAGS        things Joey said that the rubric bans (top severity: invented client stories or results)
+  FLAGS        things Joey said that the rubric bans
   MOVES        call steps and questions to look for (timeline asked, deposit asked, next call booked, ...)
   OBJECTIONS   prospect lines that look like an objection
   PROMISE      Joey's "I'll send you ..." lines, which become owed items
@@ -14,7 +14,7 @@ A regex here finds EVIDENCE with a timestamp. The model still makes the call on 
 """
 import re
 
-SEVERITY_ORDER = {"top": 0, "high": 1, "medium": 2, "low": 3}
+SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 # The host is Joey. These first names only help find his speaker label in a transcript and strip him
 # out of calendar titles ("Joey x Pat"). Pass --host to override.
@@ -23,37 +23,6 @@ HOST_FIRST_NAMES = ("joey", "joseph")
 _N = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a\s+few|several|many)"
 
 FLAGS = [
-    {
-        "id": "invented_client", "severity": "top",
-        "label": "Invented client story or result",
-        "fix": "Surven has no client results yet. Say 'market benchmark' or 'what homes in this niche see', "
-               "and let the guarantee carry the risk.",
-        "patterns": [
-            r"\bour\s+(?:clients|customers|homes|communities|operators|owners)\b",
-            r"\bour\s+(?:client|customer)(?:'|’)s?\s+(?!portal|login|dashboard|account)",
-            r"\b(?:clients?|customers?|homes?|communities|operators?|owners?|people|facilities|places)\s+"
-            r"(?:that\s+|who\s+)?(?:we|I)(?:'ve|\s+have)?\s+(?:worked|work|helped|help|served|serve|ran|run|done)\b",
-            r"\b(?:we|I)(?:'ve|\s+have)\s+(?:worked|helped|partnered|done\s+(?:this|it))\s+(?:with|for)\b",
-            r"\b(?:proven|tested|worked|done|seen|used|ran|run)\b[^.?!]{0,40}\bother\s+(?:care\s+homes?|homes|"
-            r"communities|clients|operators|facilities|assisted\s+living)\b",
-            r"\bother\s+(?:care\s+homes?|homes|communities|clients|operators|facilities)\s+(?:that\s+)?(?:we|I)\b",
-            r"\b(?:our|my)\s+(?:first|best|top|biggest|newest|last|other)\s+(?:clients?|customers?|homes|communities)\b",
-            r"\bclient\s+ad\s+spend\b",
-            r"\b\d{1,3}\s?(?:%|percent)\s+of\s+(?:our|my|the)\s+(?:clients|customers|homes|communities)\b",
-            r"\b(?:we|I)\s+(?:haven't|have\s+not|never)\s+had\s+(?:a\s+)?(?:anyone|anybody|one|client|home|clients)\b",
-            r"\b(?:we|I)(?:'ve|\s+have)?\s+(?:seen|had|gotten|got)\s+(?:clients?|homes?|communities|operators?|owners?)\s+"
-            r"(?:get|got|fill|filled|hit|see|go|went|book|booked)\b",
-            r"\b(?:our|we\s+have|I\s+have|I\s+can\s+(?:send|show)\s+you)\s+(?:\w+\s+){0,2}(?:case\s+stud(?:y|ies)|"
-            r"testimonials?|success\s+stor(?:y|ies)|references?)\b",
-            r"(?<!your\s)(?<!their\s)\bclients?\s+(?:see|saw|get|got|average|averaged|report|reported|have\s+seen|hit)\b",
-        ],
-        # also scanned on the other speaker's lines, because Fathom labels sometimes drift by a line
-        "guest_patterns": [
-            r"\bclient\s+ad\s+spend\b",
-            r"\b(?:proven|tested)\b[^.?!]{0,40}\bother\s+(?:care\s+homes?|homes|communities|clients)\b",
-            r"\bour\s+clients(?:'|’)\s+(?:best|highest|top)\b",
-        ],
-    },
     {
         "id": "unverified_claim", "severity": "high",
         "label": "Claim about Surven with no source",
@@ -257,7 +226,6 @@ PRICE_CONTEXT = (r"\b(?:fee|fees|price|prices|pricing|cost|costs|invest\w*|charg
 
 # Scorecard rows. "auto" rows get a Python verdict with evidence; the model confirms or overrides each one.
 RUBRIC_ITEMS = [
-    ("X1", "No invented client stories or results"),
     ("Q1", "Was there a huge problem, said out loud?"),
     ("Q2", "Do you know why they don't have it already?"),
     ("Q3", "Did you get a commitment to change?"),
@@ -284,7 +252,6 @@ REMINDERS = [
     {"id": "W1", "text": "Get the 3: huge problem, why not solved yet, a yes to change.", "signals": ["always"]},
     {"id": "W2", "text": "Ask, then stop. You talk yourself out of the close.", "signals": ["always", "close", "follow_up"]},
     {"id": "W3", "text": "Faster, louder, more tone.", "signals": ["always"]},
-    {"id": "W4", "text": "No client stories. Say market benchmark.", "signals": ["prior_invented", "trust_asker", "skeptic"]},
     {"id": "W5", "text": "Timelines win the close: how long, what tried, what it costs.", "signals": ["prior_no_timeline", "first_call"]},
     {"id": "W6", "text": "Extend the placement agents, never knock them.", "signals": ["placement_agents"]},
     {"id": "W7", "text": "Ask early: anyone else in this decision? A logistical stack means deposit.", "signals": ["partner"]},
@@ -308,8 +275,8 @@ EXPECT = [
      "signals": ["low_budget", "small_home"]},
     {"id": "O5", "says": "I tried an agency and it didn't work.", "move": "What happened, exactly? That reason is your close.",
      "signals": ["burned"]},
-    {"id": "O6", "says": "Who else have you done this for?", "move": "No client stories. Market benchmark plus the guarantee.",
-     "signals": ["trust_asker", "skeptic", "prior_invented"]},
+    {"id": "O6", "says": "Who else have you done this for?", "move": "Let the guarantee carry the risk.",
+     "signals": ["trust_asker", "skeptic"]},
     {"id": "O7", "says": "Send me a PDF.", "move": "Smoke screen. What would you look for in it? Book the next call first.",
      "signals": ["send_info_asker"]},
     {"id": "O8", "says": "I'm short staffed.", "move": "Capacity screen. Tours guarantee only.", "signals": ["staffing"]},

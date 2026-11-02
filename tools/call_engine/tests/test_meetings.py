@@ -150,7 +150,8 @@ class SelectTests(unittest.TestCase):
         listed = mt.parse_list("- Joey g and Dana Example | 2026-10-01 | id: 900000020 | url: "
                                "https://fathom.video/calls/111111120 | recorded by Joey Host | dana@coach.example.com")
         lib = {"sales": [], "ls": [{"Call": "Mastermind 10/1", "Link": "https://fathom.video/share/AbC"}]}
-        r = mt.select_new(listed, lib, since="2026-10-01", max_n=10, today=dt.date(2026, 10, 2))
+        kinds = {"900000020": "coaching"}                # the vague title was read from the summary: coaching
+        r = mt.select_new(listed, lib, since="2026-10-01", max_n=10, kinds=kinds, today=dt.date(2026, 10, 2))
         self.assertEqual([m["recording_id"] for m in r["todo"]], ["900000020"])
         self.assertEqual(r["todo"][0]["library"], "ls")
         self.assertEqual(r["skipped"], [])

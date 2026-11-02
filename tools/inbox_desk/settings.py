@@ -14,8 +14,8 @@ The Notion page is plain lines, one per sender (bullets are fine):
     coach <Name>: <address or domain>
     vendor <Name>: <address or domain>
     ignore: <address or domain>
-Notion shows each address as a mailto link ([a@b.com](mailto:a@b.com)); links and mailto: are stripped and each
-(kind, label, address) is kept once.
+Notion shows each address as a mailto link ([a@example.com](mailto:a@example.com)); links and mailto: are
+stripped and each (kind, label, address) is kept once.
 
   python3 -m tools.inbox_desk.settings --from-text /tmp/inbox_desk/settings.md --out /tmp/inbox_desk/private.json
 """
@@ -35,7 +35,8 @@ PRIVATE = os.path.join(OUT_DIR, "private.json")
 _LINE = re.compile(r"^\s*(?:[-*\u2022]\s*)?(?:\[[ x]\]\s*)?(own|client|coach|vendor|ignore)\b\s*([^:]*?)\s*:\s*(.+?)\s*$",
                    re.I)
 _ADDR = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+|(?<![@\w])(?:[\w-]+\.)+[a-z]{2,}(?![\w@])", re.I)
-# Notion stores an address as a mailto link: [a@b.com](mailto:a@b.com), or <mailto:a@b.com>. Read each link once.
+# Notion stores an address as a mailto link: [a@example.com](mailto:a@example.com) or <mailto:a@example.com>.
+# Read each link once.
 _MD_LINK = re.compile(r"\[([^\]]*)\]\(\s*<?([^)\s>]*)>?\s*\)")
 _AUTOLINK = re.compile(r"<\s*((?:mailto:|https?://)?[^<>\s]+)\s*>", re.I)
 _SCHEME = re.compile(r"\b(?:mailto:|https?://)", re.I)

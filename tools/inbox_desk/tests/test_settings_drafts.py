@@ -53,9 +53,9 @@ class Settings(unittest.TestCase):
             with redirect_stdout(buf):
                 st.main(["--from-text", src, "--out", out])
             self.assertIn("settings: 8 sender(s)", buf.getvalue())
-        r = st.load_rules(private=d, config={}, senders={"coaches": {"pat_coach": {"label": "Pat Coach",
-                                                                                     "domains": [],
-                                                                                     "senders": ["pat_coach@example.com"]}}})
+        public = {"coaches": {"pat_coach": {"label": "Pat Coach", "domains": [],
+                                            "senders": ["pat_coach@example.com"]}}}
+        r = st.load_rules(private=d, config={}, senders=public)          # the merge adds each sender once too
         self.assertEqual(r["coaches"]["pat_coach"]["senders"], ["pat_coach@example.com", "pat.coach2@example.com"])
 
     def test_merge(self):

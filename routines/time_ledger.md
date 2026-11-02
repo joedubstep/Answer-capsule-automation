@@ -19,9 +19,10 @@
   under Automations in Notion and the same report emailed to Joey's own Gmail (`google.joey_gmail`, the only
   recipient).
 - **Cost:** about $0.10 to $0.30 a night on Sonnet. One page fetch (only the top four log sections are copied),
-  one SQL read of the keys for the days those sections hold (2 to 4 days), about 15 to 25 short labels, a calendar
-  and Gmail lookup only when a block is blank, and one Notion write of about 20 to 40 rows. A night with nothing
-  new stops after the parse. Sundays add two SQL reads (one week of rows), one Notion page and one email.
+  one SQL read of the keys for the days those sections hold (2 to 4 days; the tool returns 100 rows a call, so one
+  or two pages), about 15 to 25 short labels, a calendar and Gmail lookup only when a block is blank, and one Notion
+  write of about 20 to 40 rows. A night with nothing new stops after the parse. Sundays add two SQL reads (one week
+  of rows, a few pages of 100), one Notion page and one email.
 
 ## Prompt
 
