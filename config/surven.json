@@ -1,0 +1,80 @@
+{
+  "_note": "Non-secret system ids only. No keys, no names, no phone numbers, no personal data. This repo is PUBLIC.",
+  "envs": {
+    "default_agc": "env_01UkFtCmXo2vwSWjK2qkhgF2",
+    "surven_hq": "env_01LcNf8JTtUumgjrBBnvJ7pK",
+    "splendor": "env_01KKsZkwureeTEvfSUyZmmm5"
+  },
+  "ghl": {
+    "hq": {
+      "location": "EeadFhXhDOJ1DWE4ArhK",
+      "joey_alert_contact": "ITgRAUyt3KqdPbQB5cUo",
+      "pipelines": {
+        "leadsuite": "WN4pEbi1zNUn7icsObpN",
+        "email": "D26Fys9N44CiadqYjkm7",
+        "warm_referral": "XxLNrcg6PpnhCMkPvJ1C",
+        "normal_lead": "lscmkVBQStUnDgscgNvP"
+      },
+      "calendars": {
+        "discovery_call": "siNHUDan1hhV6eKLstdq",
+        "lead_suite_personal": "TfETBEfg6aye6PYNdYZX",
+        "joseph_personal": "0fJ269nP8YcEgzkgCoME",
+        "client_calls": "wT88OYdr5mJs0nG5ohXU"
+      },
+      "code_field_email_reply": "6pUnUwaxqRfQW3q0g2AR"
+    },
+    "agc": {
+      "location": "ySKGXQBLqevOlFCmV1Wo",
+      "joey_alert_contact": "C0oN6jnp768gCNqNIgZY",
+      "pipelines": {
+        "family_journey": "XfVVFzt8CXRnTtc9PRq5",
+        "referral_partners": "MVOEVgIdYEGt21HZH8R6"
+      },
+      "calendars": {
+        "tour": "uQEkJzpLsRP579RqHeXV",
+        "owner_personal": "cnUimm2WimM64JcGOhFz"
+      },
+      "fields": {
+        "agent_stage": "PPg3tiYdrvINsAH8WXlB",
+        "svn_call_outcome": "rUXPM8VL4FimV3xfrM6O",
+        "svn_tour_result": "OxNh9FqAZlNXhv8AJWVg",
+        "agent_plan_log": "Vwp2g2mpj9FO4BNZEG37"
+      }
+    },
+    "splendor": {
+      "location": "QxKf9rbHVJW6UvkFszds"
+    }
+  },
+  "notion": {
+    "surven_hq_root": "3b1e1c3d79d881cfb848f5aac98783dc",
+    "joey_todo_page_15min_log": "3b3e1c3d79d8809a88d2e85c33f6172b",
+    "morning_sales_brief_page": "3e7e1c3d79d881e9aee5eafc966a80e3",
+    "sales_call_library_db": "3b9e1c3d79d88166beddc24ba7f3e6a9",
+    "sales_call_library_ds": "collection://3b9e1c3d-79d8-8175-9ec7-000befb007ba",
+    "ls_call_library_ds": "collection://87165ea0-2b8e-4683-a1d6-488582afca64",
+    "close_call_kit": "3b6e1c3d79d8817391f4d9b4eb30a5f8",
+    "guarantee_conditions": "404e1c3d79d88053a10ecbb71430e58e",
+    "offer_master": "3dce1c3d79d88063b203d0934e721836",
+    "sops": "3f6e1c3d79d88077991ec83be5691249",
+    "campaign_events_ds": "collection://3e7e1c3d-79d8-8188-b653-000bd82bfc5a",
+    "automations_home": "",
+    "action_log_ds": "",
+    "learnings_ds": ""
+  },
+  "google": {
+    "surven_calendar": "79863000bbbc6c74580e78120c2957338f338f264d9b96acbaac45d6610536ff@group.calendar.google.com",
+    "joey_gmail": "joedubstep312@gmail.com"
+  },
+  "cold_email_domains": ["getsurven.com", "joinsurven.com", "survenhq.com", "usesurven.com", "survenoccupancy.com", "meetsurven.com", "trysurven.com", "surven.ai"],
+  "artifacts": {
+    "hq_desk": "",
+    "client_desk_agc": "",
+    "client_desk_splendor": "",
+    "copy_checker": "",
+    "time_ledger": ""
+  },
+  "campaign": {
+    "price_raise_deadline_et": "2026-11-18T20:00",
+    "_deadline_note": "Change here if the deadline moves; every tool reads it from this file."
+  }
+}
