@@ -69,22 +69,19 @@ class AnalyzeTests(unittest.TestCase):
         self.assertEqual(self.a["first_price_ask"]["ts"], "08:04")
         self.assertEqual(self.a["pitch_start"]["ts"], "05:00")      # screen share
 
-    def test_top_flags_are_verbatim_with_links(self):
-        top = [f for f in self.a["flags"] if f["severity"] == "top"]
-        self.assertEqual([f["ts"] for f in top], ["04:30", "05:12"])
-        self.assertEqual(top[0]["quote"], "One of our first clients was in the same spot, and they got sixteen tours in thirty days.")
-        self.assertEqual(top[0]["url"], URL + "?timestamp=270")
-        self.assertEqual(self.a["flags"][0]["severity"], "top")      # sorted most severe first
+    def test_flags_are_verbatim_with_links(self):
+        claim = [f for f in self.a["flags"] if f["rule"] == "unverified_claim"]
+        self.assertEqual([f["ts"] for f in claim], ["04:44", "05:12"])
+        self.assertEqual(claim[0]["quote"], "We've been in business for three years and it is the only thing we do.")
+        self.assertEqual(claim[0]["url"], URL + "?timestamp=284")
+        self.assertEqual(self.a["flags"][0]["severity"], "high")     # sorted most severe first
 
     def test_other_flags(self):
         rules = {(f["rule"], f["ts"]) for f in self.a["flags"]}
         self.assertIn(("good_time_ask", "00:09"), rules)
         self.assertIn(("unverified_claim", "04:44"), rules)
-        self.assertNotIn(("unverified_claim", "05:12"), rules)      # same sentence already has the top flag
-        guest = [f for f in self.a["flags"] if f.get("speaker_uncertain")]
-        self.assertEqual(len(guest), 1)
-        self.assertEqual(guest[0]["ts"], "07:50")
-        self.assertEqual(guest[0]["severity"], "medium")
+        self.assertIn(("unverified_claim", "05:12"), rules)
+        self.assertFalse(any(f["ts"] == "07:50" for f in self.a["flags"]))   # only Joey's lines are flagged
 
     def test_moves(self):
         mv = self.a["moves"]
@@ -112,7 +109,7 @@ class AnalyzeTests(unittest.TestCase):
 
     def test_auto_checks(self):
         c = {x["id"]: x["result"] for x in self.a["auto_checks"]}
-        self.assertEqual(c["X1"], "miss")
+        self.assertNotIn("X1", c)
         self.assertEqual(c["S1"], "miss")
         self.assertEqual(c["S3"], "pass")
         self.assertEqual(c["S8"], "miss")
@@ -144,24 +141,13 @@ class AnalyzeTests(unittest.TestCase):
         hits = [f for f in tr.analyze(plain, deadline="2026-11-18")["flags"] if f["rule"] == "deadline_mismatch"]
         self.assertEqual([h["ts"] for h in hits], ["00:20"])         # "the 2 beds" is not a date
 
-    def test_clean_call_passes_x1(self):
-        text = ("[00:01](%s?timestamp=1) Joey Host: Tell me a little about your home.\n"
-                "[00:30](%s?timestamp=30) Pat Example: Ten beds, three empty.\n"
-                "[01:00](%s?timestamp=60) Joey Host: The market benchmark is about one tour a week per empty bed.\n" % (URL, URL, URL))
-        a = tr.analyze(text)
-        self.assertEqual([f for f in a["flags"] if f["severity"] == "top"], [])
-        self.assertEqual(next(x for x in a["auto_checks"] if x["id"] == "X1")["result"], "pass")
-
-    def test_invented_patterns(self):
+    def test_client_stories_are_not_flagged(self):
         lines = ["We've worked with a home just like yours.", "Most of our clients get 20 tours.",
                  "That is a total of 900k of client ad spend.", "It is already proven on other care homes.",
                  "I can send you our case studies.", "We haven't had anyone get less than ten."]
         for i, line in enumerate(lines):
             text = "[00:%02d](%s?timestamp=%d) Joey Host: %s" % (i, URL, i, line)
-            a = tr.analyze(text)
-            self.assertTrue(any(f["rule"] == "invented_client" for f in a["flags"]), line)
-        ok = tr.analyze("[00:01](%s?timestamp=1) Joey Host: Your clients will see the ad first." % URL)
-        self.assertFalse(any(f["rule"] == "invented_client" for f in ok["flags"]))
+            self.assertEqual(tr.analyze(text)["flags"], [], line)
 
     def test_json_wrapped_result(self):
         body = "[00:01](%s?timestamp=1) Joey Host: Tell me about your home.\n[00:05](%s?timestamp=5) Pat Example: Ten beds." % (URL, URL)

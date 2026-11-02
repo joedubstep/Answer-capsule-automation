@@ -15,7 +15,6 @@ META = {"title": "joey x Pat Example", "date": "2026-10-29", "recording_id": RID
 
 def good_review():
     scores = {i: {"result": "pass", "note": "ok", "ts": "03:20"} for i, _ in rules.RUBRIC_ITEMS}
-    scores["X1"] = {"result": "miss", "note": "two made-up client lines", "ts": "04:30"}
     scores["S8"] = {"result": "miss", "note": "no capacity screen", "ts": None}
     return {
         "type": "Discovery", "with": "Pat (Maple Example House)", "outcome": "Interested, wants to talk to his wife.",
@@ -25,9 +24,9 @@ def good_review():
                         "verdict": "partial"}],
         "owed": [{"item": "PDF of the plan", "due": "2026-10-30", "ts": "08:52"}],
         "next_step": {"what": "Follow-up call with Pat and his wife", "when": "2026-11-05 10:00"},
-        "fix_next_time": ["Say market benchmark, never a client story.", "Ask the capacity question before the doc."],
+        "fix_next_time": ["Never ask if it is a good time.", "Ask the capacity question before the doc."],
         "did_well": ["Asked how long the beds were empty at 03:20."],
-        "listen_for": [{"ts": "04:30", "label": "made-up client story"}, {"ts": "08:15", "label": "price"}],
+        "listen_for": [{"ts": "00:09", "label": "good time ask"}, {"ts": "08:15", "label": "price"}],
         "email": {"to": "pat@example.com", "subject": "Our call today",
                   "body": "Hi Pat,\n\nThanks for the time today. Two rooms open and the agents are slow.\n\n"
                           "I owe you the plan as a PDF. It will be in your inbox tomorrow.\n\n"
@@ -64,10 +63,10 @@ class ReviewBase(unittest.TestCase):
 
 class PacketTests(ReviewBase):
     def test_packet_numbers_flags(self):
-        self.assertEqual([f["n"] for f in self.packet["flags"]], [1, 2, 3, 4, 5])
+        self.assertEqual([f["n"] for f in self.packet["flags"]], [1, 2, 3])
         view = self.rv.packet_view(self.packet)
-        self.assertIn('#1 [top] invented_client at 04:30', view)
-        self.assertIn("SCORE THESE ROWS: X1, Q1", view)
+        self.assertIn('#1 [high] good_time_ask at 00:09', view)
+        self.assertIn("SCORE THESE ROWS: Q1, Q2", view)
         self.assertIn("PROMISES", view)
 
 
@@ -83,46 +82,41 @@ class RenderSalesTests(ReviewBase):
         self.assertEqual(row["properties"]["Type"], "Discovery")
         self.assertEqual(row["properties"]["Call"], "Pat (Maple Example House) Discovery 10/29")
         self.assertEqual(row["parent"]["data_source_id"], "3b9e1c3d-79d8-8175-9ec7-000befb007ba")
-        self.assertIn("04:30 made-up client story", row["properties"]["Listen for"])
+        self.assertIn("00:09 good time ask", row["properties"]["Listen for"])
         c = row["content"]
-        self.assertTrue(c.startswith('<callout icon="\U0001F534" color="red_bg">'))
-        self.assertIn('[04:30](https://fathom.video/calls/111111111?timestamp=270) "One of our first clients was in the '
-                      'same spot, and they got sixteen tours in thirty days."', c)
-        self.assertIn("TOP SEVERITY: made-up client story or result (2)", c)
+        self.assertTrue(c.startswith("<b>OUTCOME:</b>"))
+        self.assertNotIn("TOP SEVERITY", c)
+        self.assertIn('[04:44](https://fathom.video/calls/111111111?timestamp=284) Claim about Surven with no source: '
+                      '"We\'ve been in business for three years and it is the only thing we do."', c)
         self.assertIn("- [ ] PDF of the plan. Due Fri 10/30.", c)
-        self.assertIn("(18 of 20 passed)", c)
-        self.assertIn("[04:30](https://fathom.video/calls/111111111?timestamp=270) made-up client story", c)
+        self.assertIn("(18 of 19 passed)", c)
+        self.assertIn("[00:09](https://fathom.video/calls/111111111?timestamp=9) good time ask", c)
         draft = self.load("draft.json")
         self.assertEqual(draft["to"], ["pat@example.com"])
         self.assertTrue(draft["body"].rstrip().endswith("Joey"))
         res = self.load("result.json")
-        self.assertEqual(res["top_flags"], 2)
+        self.assertNotIn("top_flags", res)
         self.assertEqual(res["owed"], [{"item": "PDF of the plan", "due": "2026-10-30"}])
 
-    def test_missing_scores_and_unreviewed_top_flag(self):
+    def test_missing_scores(self):
         rv = good_review()
         del rv["scores"]["S5"]
-        rv["flags_review"] = {"1": {"status": "confirmed"}}
         rv["fix_next_time"] = []
         self.write_review(rv)
         code, errs, _ = self.rv.render(RID)
         self.assertEqual(code, 1)
         joined = " | ".join(errs)
         self.assertIn("scores.S5", joined)
-        self.assertIn("flag #2 is top severity", joined)
         self.assertIn("fix_next_time needs 1 to 3", joined)
 
-    def test_clear_needs_why_and_shows_in_notes(self):
+    def test_cleared_flag_shows_in_notes(self):
         rv = good_review()
-        rv["flags_review"]["2"] = {"status": "cleared"}
-        self.write_review(rv)
-        self.assertIn("flag #2 cleared without a why", " ".join(self.rv.render(RID)[1]))
-        rv["flags_review"]["2"] = {"status": "cleared", "why": "describes the offer page, checked by listening"}
+        rv["flags_review"]["3"] = {"status": "cleared", "why": "describes the offer page, checked by listening"}
         self.write_review(rv)
         self.assertEqual(self.rv.render(RID)[0], 0)
         c = self.load("row.json")["content"]
-        self.assertIn("TOP SEVERITY: made-up client story or result (1)", c)
-        self.assertIn("Cleared flag at 05:12", c)
+        self.assertIn("Cleared flag at 05:12 (unverified_claim): describes the offer page", c)
+        self.assertNotIn("The scripts are based on", c.split("<toggle>")[0])
 
     def test_email_copy_check_blocks(self):
         rv = good_review()
@@ -133,7 +127,6 @@ class RenderSalesTests(ReviewBase):
         joined = " | ".join(errs)
         self.assertIn("dash", joined)
         self.assertIn("price_before_call", joined)
-        self.assertIn("invented_results", joined)
         self.assertIn("sign-off", joined)
         self.assertFalse(os.path.exists(os.path.join(self.tmp, RID, "draft.json")))
 
@@ -148,11 +141,16 @@ class RenderSalesTests(ReviewBase):
 
     def test_extra_flag_from_listening(self):
         rv = good_review()
-        rv["extra_flags"] = [{"rule": "invented_client", "ts": "06:00", "quote": "We did this for a home in your state."}]
+        rv["extra_flags"] = [{"rule": "unverified_claim", "ts": "06:00", "quote": "We are the top team in the state."}]
         self.write_review(rv)
         self.assertEqual(self.rv.render(RID)[0], 0)
-        self.assertIn("(3)", self.load("row.json")["content"])
-        self.assertEqual(self.load("result.json")["top_flags"], 3)
+        self.assertIn('[06:00](https://fathom.video/calls/111111111?timestamp=360) Claim about Surven with no source: '
+                      '"We are the top team in the state."', self.load("row.json")["content"])
+        rv["extra_flags"][0]["rule"] = "invented_client"
+        self.write_review(rv)
+        code, errs = self.rv.render(RID)[:2]
+        self.assertEqual(code, 1)
+        self.assertIn("extra_flags rule must be one of", " ".join(errs))
 
 
 class CoachingTests(ReviewBase):
@@ -179,7 +177,7 @@ class FinishTests(ReviewBase):
         line, sms = self.rv.finish(created={RID: {"row": "https://app.notion.com/p/x", "draft": "d1"}})
         self.assertIn("1 sales call(s) reviewed, 1 row(s) added, 1 follow-up draft(s) in Gmail", line)
         self.assertIn("you owe PDF of the plan by Fri 10/30", line)
-        self.assertIn("2 made-up client claim(s) flagged", sms)
+        self.assertIn("Pat Discovery: you owe PDF of the plan by Fri 10/30", sms)
         self.assertTrue(sms.endswith("Follow-up draft in Gmail."))
         self.assertIsNone(self.rv.finish(created={})[1])            # nothing written, no text
         dry, none = self.rv.finish(dry_run=True)

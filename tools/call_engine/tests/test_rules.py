@@ -21,7 +21,6 @@ class RulesTests(unittest.TestCase):
         for table in (rules.FLAGS, rules.MOVES, rules.OBJECTIONS):
             for r in table:
                 rules.compile_all(r["patterns"])
-                rules.compile_all(r.get("guest_patterns", []))
         rules.compile_all(rules.PROMISE)
         for rx in (rules.MONEY, rules.PRICE_CONTEXT, rules.PROMISE_EXCLUDE, *rules.SIGNAL_WORDS.values()):
             re.compile(rx)
@@ -39,7 +38,6 @@ class RulesTests(unittest.TestCase):
             self.assertEqual(len(ids), len(set(ids)))
         for f in rules.FLAGS:
             self.assertIn(f["severity"], rules.SEVERITY_ORDER)
-        self.assertEqual(rules.FLAGS[0]["severity"], "top")
 
     def test_offer_rules_file(self):
         with open(os.path.join(TOOL, "offer_rules.json"), encoding="utf-8") as f:
