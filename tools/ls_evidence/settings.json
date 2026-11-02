@@ -1,0 +1,90 @@
+{
+  "_note": "Lead Suite Evidence settings. This repo is PUBLIC: no names, no phone numbers, no money amounts here. Change a value and the next run uses it. Every block says where its values come from.",
+
+  "contract": {
+    "_source": "Lead Suite contract, signed 2026-07-19 (private copy in the vault, Ads Agency folder). The fee is refunded if Surven gets fewer than the target number of booked qualified calls within the window after ads go live, and only with CRM proof that every lead was contacted and qualified with their scored checklist.",
+    "signed": "2026-07-19",
+    "target_qualified_calls": 30,
+    "window_days": 90
+  },
+
+  "ads": {
+    "_source": "Ads went live 2026-08-08 (the first ad lead came in that day). They were paused 2026-08-14 to 2026-08-24 (both days included). Lead Suite's CSM said the pause does not burn the 90-day clock, so paused days are skipped when the window end is worked out.",
+    "live_date": "2026-08-08",
+    "pauses": [
+      {"from": "2026-08-14", "to": "2026-08-24", "burns_clock": false,
+       "_source": "CSM message: the pause does not burn the clock. Keep that message in the refund file, because the ad spend condition says 90 days in a row."}
+    ]
+  },
+
+  "portal": {
+    "_source": "The Lead Suite portal has no API. Joey types one row per lead (+ Add Lead) and one per booked call (+ Add Call), on Sundays.",
+    "entered_through": null,
+    "_entered_through_note": "Optional. An Eastern date like \"2026-11-01\". Leads that came in, and calls that happened, on or before this date count as already typed into the portal. The page also remembers which rows it listed before (from the last published page), so this is only needed after a missed week or on the first run."
+  },
+
+  "sop": {
+    "_source": "Lead Suite's scored per-lead checklist (portal, checked 2026-07-23): triple dial within 3 to 5 min of the form fill, SMS 1 within 5 min, double dial right after a reply, SMS 2 at plus 3 to 4 hours, SMS 3 at plus 2 to 3 hours after SMS 2, lead replied. The booked call checklist: triage call before the main call, show-rate SOP followed, pre-call video email the evening before, morning confirm call or text, showed. The texts stop once the lead replies (official Show Rate SOP, CSM Loom 2026-07-24).",
+    "triple_dial_minutes": 5,
+    "dials_for_triple": 3,
+    "sms1_minutes": 5,
+    "double_dial_minutes": 10,
+    "_double_dial_note": "The SOP says right after the reply. 10 minutes is our reading of that. Change it here if Lead Suite says otherwise.",
+    "dials_for_double": 2,
+    "sms2_hours": [3, 4],
+    "sms3_hours_after_sms2": [2, 3],
+    "grace_minutes": 0,
+    "talk_min_seconds": 30,
+    "triage_min_seconds": 60,
+    "words_per_second": 1.8,
+    "_words_note": "Auto-dialer calls often have no length in GHL. Their length is estimated from the transcript word count, the same way the Morning Sales Brief does it.",
+    "dial_statuses_not_counted": ["canceled", "cancelled"],
+    "_dial_note": "A canceled call is the bridge that rang Joey first and never reached the lead, so it is not a dial.",
+    "sms_statuses_not_counted": ["failed", "undelivered"],
+    "quiet_hours": {"from": "20:45", "to": "08:00",
+                    "_source": "Show Up Machine quiet hours (8am to 8:45pm in the lead's time zone). The CSM confirmed a form filled after about 9pm gets its first call the next morning. A step that falls in quiet hours is due at 8am."},
+    "evening_from": "17:00",
+    "morning_from": "05:00",
+    "morning_until": "12:00",
+    "_morning_note": "Morning confirm: a call or text on the day of the call, from 5am until the call starts, at least 30 minutes after the booking. A call booked the same day after noon has no morning, so the box is Not due.",
+    "confirm_minutes_after_booking": 60,
+    "precall_subject_rx": "required.?urgent|pre.?call|before (our|your|the) call|video"
+  },
+
+  "calls": {
+    "_source": "Same rules as the Morning Sales Brief: the Discovery Call calendar counts; the Lead Suite calendar is a Google Calendar copy, so only its events titled as a discovery call count, and a copy within 30 minutes of a Discovery Call booking is the same call. Onboarding and go-live calls are client calls, never sales calls. A booking cancelled and rebooked within 60 minutes is one booking.",
+    "lead_suite_title_rx": "discovery",
+    "client_call_title_rx": "on[\\s-]*boarding|onboard(ed)?|go[\\s-]*live",
+    "merge_minutes": 30,
+    "rebook_minutes": 60,
+    "ready_hours_after_start": 3,
+    "count_rule": "booked_at",
+    "_count_rule_note": "booked_at: a call counts when it was booked inside the window. start: when it happens inside the window."
+  },
+
+  "qualified": {
+    "_source": "A booked call counts as qualified unless GHL marks the lead unqualified: the Leadsuite Pipeline stage, or the STL Outcome Reason (convention since 2026-08-08: Not Qualified or Disqualified carries the truth). Overrides are keyed by the lead's reply code only, never a name.",
+    "unqualified_stages": ["Unqualified", "Wrong Number"],
+    "unqualified_reason_rx": "disqual|unqualif|not qualified|wrong fit|job seek|wrong number|spam|duplicate",
+    "overrides": {}
+  },
+
+  "conditions": [
+    {"key": "vsl", "text": "VSL scripted and recorded within 30 days of signing", "proof": "outside",
+     "where": "Not in GHL. Keep the dated Loom or Drive files and the Discord message where Lead Suite received them."},
+    {"key": "ad_scripts", "text": "Ad scripts recorded within 30 days of signing", "proof": "outside",
+     "where": "Not in GHL. Keep the dated files and the Discord hand-off."},
+    {"key": "ad_spend", "text": "Ad spend at or above the contract's daily floor, every day for 90 days in a row", "proof": "outside",
+     "where": "GHL cannot prove this. Use the daily spend in Meta Ads Manager and the Meta charges on the Mercury card. The Aug 14 to 24 pause needs the CSM's written note that it does not burn the clock."},
+    {"key": "coaching", "text": "Attend all coaching calls", "proof": "outside",
+     "where": "Not in GHL. Use the calendar invites and the contemporaneous transcripts of each call."},
+    {"key": "portal", "text": "Complete the portal checklists", "proof": "partly",
+     "where": "This page lists every row to type in. The portal itself is the proof: screenshot it after each Sunday entry."},
+    {"key": "sales_process", "text": "Use their sales process and keep every sales call on file", "proof": "partly",
+     "where": "GHL shows each booked call and every dial through the GHL number. The sales calls themselves live in Fathom, not GHL."},
+    {"key": "every_lead", "text": "Contact and qualify every lead with their appointment-setting checklist", "proof": "crm",
+     "where": "This page: every lead's 6 boxes with the GHL time stamps."},
+    {"key": "crm_proof", "text": "CRM proof for the refund", "proof": "crm",
+     "where": "This page plus GHL. Copy the evidence tables into the refund file."}
+  ]
+}
