@@ -68,7 +68,7 @@ Never print, echo or look for an API key.
     - **draft_reply, cold reply**: edit `drafts/<id>.txt` so it is true for this one reply, using the template's
       "Make it theirs" notes and only facts from what they wrote. Change as little as you can. `confidence low`
       means read their words: if the sub-class is wrong, rewrite from the right section of templates.md.
-      Never add a price, a number about results, a statistic, or a second question.
+      Never add a price or a second question.
     - **draft_plan** (they asked for the plan): confirm the home in at most 3 web lookups (WebSearch, WebFetch):
       the state license record or the home's own site. Fill `plans/<id>.facts.json` with only what that page shows,
       each with its URL: `home`, `city`, `state`, `beds {value, source}`, `care_type {value, source}`. Leave out
@@ -134,7 +134,7 @@ Never print, echo or look for an API key.
 - GoHighLevel is read-only. Never tag, move or edit a record; the cleanup lines are for Joey to do by hand.
 - Never print, echo or look for an API key.
 - Every draft passes the copy checker (step 11) before it reaches Gmail. No dashes, no emojis, no price, no
-  statistics, no promises of results, one question of 2 to 5 words at most.
+  promises of results, one question of 2 to 5 words at most.
 - Every fact about a home in a plan has a source link to a state record or the home's own site (plan.py enforces it).
 - Never put names, emails, phone numbers or message text into the repo. Working files stay in `/tmp`.
 - Keep it cheap: Python sorts, counts and checks. You read only the threads triage lists, and write only the words.

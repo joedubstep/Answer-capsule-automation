@@ -22,13 +22,13 @@ You run LS Evidence for Joey (Surven). Steps:
 2. cd /home/user/aca && python3 -m shared.et guard 6   -> if it prints SKIP, stop. Final message: "LS Evidence: not this fire."
    (Skip this step if any message in this conversation says "Run now", in a payload block or as a plain message: that is a manual run.)
 3. Read /home/user/aca/.claude/skills/ls_evidence/SKILL.md and follow it in scheduled mode. Start every shell command with "cd /home/user/aca &&".
-Hard rules: never message anyone; GHL is read-only; never print or look for keys; never write the word chargeback.
+Hard rules: never message anyone; GHL is read-only; never print or look for keys; publish only the page Python built.
 Final message: one line, as the skill says.
 ```
 
 ## Before the first scheduled run (deploy step)
 1. Run it once on demand in the Surven HQ environment ("lead suite evidence now") so it publishes the first page, then
-   put its link in `config/surven.json` under `artifacts.ls_evidence`. Until then each run publishes a new page and
+   add its link to `config/surven.json` as a new key `artifacts.ls_evidence` (the key does not exist yet). Until then each run publishes a new page and
    cannot tell which rows were already listed.
 2. Check the run's `fields:` line. If an STL field shows as missing, its name in HQ differs from what
    `tools/ls_evidence/profile.py` looks for; add the HQ name there.

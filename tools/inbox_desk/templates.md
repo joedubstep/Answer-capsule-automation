@@ -16,7 +16,6 @@ with real facts from what they wrote, and changes as little as it can.
   with the point. Client and vendor mail keeps `{greeting}`.
 - The ask is ONE question of 2 to 5 words. Never two questions.
 - No price, no range, no number about cost. If they ask the price: "I'll give you a straight answer on a quick call."
-- No statistics, no research, no client results. Surven has no client results yet.
 - Name the situation, never the person. Take the blame, never give it ("I should have been clearer").
 - "Residents", never "patients". "Families", never "leads". Never "care home" or "enquiry".
 - Never "audit", "assessment", "grade" or "score". Never "is now a bad time".

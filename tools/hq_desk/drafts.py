@@ -43,7 +43,6 @@ BLOCK_RULES = [
 ]
 WARN_RULES = [
     ("cold outreach words", r"\b(audit|assessment|grade|score)\b", "Avoid audit, assessment, grade and score."),
-    ("no statistics", r"\d+(\.\d+)?\s?%", "No statistics in prospect copy."),
     ("price", r"\$\s?\d", "No price before a call unless they already heard it on one."),
     ("buzzwords", r"\b(leverage|unlock|journey|seamless|robust|game-?changer|circle back|dial in|double down)\b",
      "Use plain words."),

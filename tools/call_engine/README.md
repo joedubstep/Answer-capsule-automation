@@ -32,15 +32,13 @@ and any call that already has a prep page.
 - A new row in the **Sales Call Library** with Type, With, the Fathom link, "Listen for" timestamps and a
   one-line note. **Watched** stays unchecked for you.
 - Inside the row, the scorecard:
-  - At the top, in red: any time you told a client story or result that did not happen, quoted word for
-    word with a link to that second of the call. Surven has no client results yet, so these are the most
-    important thing on the page. Say "market benchmark" instead.
   - Your 3 questions: was there a huge problem, do you know why they don't have it already, did you get a
     commitment to change.
   - Each step of the call from your coach's structure and your own watch notes, marked Pass, Partial or Miss
     with a timestamp.
   - The numbers: how much of the talking you did, your longest stretch, how many questions you asked, when
     price first came up.
+  - Flagged lines (like asking if it is a good time), quoted word for word with a link to that second.
   - Their objections and how you handled them.
   - **You owe:** every promise you made, with a due date.
   - The next step, the 3 fixes for next time, and what you did well.
@@ -56,7 +54,7 @@ in the morning, or "Call review ready ... you owe ..." at night.
 ## What you do with it
 - **Morning:** open the prep page before the call. Skim the red box. Keep it open during the call.
 - **Night:** open the Gmail draft, read it, change anything, and send it. Do what is under "You owe" by the
-  date. Open the row, read the red box and the 3 fixes, and listen to the timestamps instead of rewatching
+  date. Open the row, read the 3 fixes, and listen to the timestamps instead of rewatching
   the whole call. Check Watched when you are done.
 
 ## Minutes it saves

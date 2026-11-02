@@ -15,8 +15,8 @@ import os
 import sys
 
 from tools.ls_evidence import profile as prof
-from tools.ls_evidence.score import (CALL_BOXES, LEAD_BOXES, NO, NOT_DUE, UNKNOWN, YES, fmt_day, fmt_et, plural,
-                                     scrub)
+from tools.ls_evidence.score import (CALL_BOXES, LEAD_BOXES, NO, NOT_DUE, UNKNOWN, YES, clock, fmt_day, fmt_et, hm,
+                                     plural, scrub)
 
 E = html.escape
 CLS = {YES: "y", NO: "n", NOT_DUE: "nd", UNKNOWN: "u"}
@@ -317,7 +317,7 @@ def board_section(ev):
 
     stats = [
         ("Qualified booked calls", f"{b['qualified_booked']} of {b['target']}",
-         f"{b['booked_in_window']} booked in the window, {b['unqualified']} not qualified, {b['cancelled']} cancelled"),
+         f"{b['booked_in_window']} booked in the window, {b['unqualified']} not qualified, {b['cancelled']} canceled"),
         ("Days left", str(max(0, w["left"])), f"{live} to {end}{paused}"),
         ("Showed", str(b["held"]), f"{b['upcoming']} still ahead"),
         ("Lead SOP rate", rate(s["leads"]), f"{s['leads']['yes']} of {s['leads']['yes'] + s['leads']['no']} due boxes"),
@@ -339,29 +339,40 @@ def board_section(ev):
             f'</ul></details></div></section>')
 
 
+def at(s, default):
+    """'20:45' -> '8:45pm' for the page."""
+    return clock(dt.datetime(2000, 1, 1, *hm(s, default)))
+
+
 def footer(ev):
     sop = ev["settings_used"]["sop"]
     q = sop.get("quiet_hours") or {}
+    q_from, q_to = at(q.get("from"), (20, 45)), at(q.get("to"), (8, 0))
     rules = [
         f"Triple dial: {sop.get('dials_for_triple', 3)} dials within {sop.get('triple_dial_minutes', 5)} min of the "
         f"form fill, or an earlier dial they picked up. A canceled bridge call is not a dial.",
-        f"SMS 1: a text within {sop.get('sms1_minutes', 5)} min. SMS 2: a text {sop.get('sms2_hours', [3, 4])[0]} to "
+        f"SMS 1: the first text, within {sop.get('sms1_minutes', 5)} min (a late first text is still SMS 1, never "
+        f"SMS 2). SMS 2: a later text {sop.get('sms2_hours', [3, 4])[0]} to "
         f"{sop.get('sms2_hours', [3, 4])[1]} hours after the form. SMS 3: a text "
         f"{sop.get('sms3_hours_after_sms2', [2, 3])[0]} to {sop.get('sms3_hours_after_sms2', [2, 3])[1]} hours after SMS "
-        f"2. Once they reply, the texts are not due.",
+        f"2. Once they reply, the texts are not due. A STOP reply needs no double dial.",
         f"Double dial: {sop.get('dials_for_double', 2)} dials within {sop.get('double_dial_minutes', 10)} min of their "
         f"first reply, unless they were already talking with us.",
-        f"Quiet hours {q.get('from', '20:45')} to {q.get('to', '08:00')} on the lead's clock: a step due then is due at "
-        f"{q.get('to', '08:00')}.",
+        f"A lead who comes in after {at(sop.get('next_day_after'), (21, 0))} or before {q_to} on their own clock is "
+        f"due from {q_to}. Quiet hours are {q_from} to {q_to} on the lead's clock: a text or double dial due then is "
+        f"due at {q_to}.",
+        "An answered call with no length in GHL counts as a talk, but the box says Check: it may have been a voicemail.",
         "Triage: an answered call of a minute or more before the meeting. Pre-call email: sent the evening before "
-        f"(from {sop.get('evening_from', '17:00')}). Morning confirm: a call or text that morning before the call. "
-        "Show-rate SOP: the booking confirmation, the pre-call email and the morning confirm.",
+        f"(from {at(sop.get('evening_from'), (17, 0))}). Morning confirm: a call or text the morning of the call, from "
+        f"{at(sop.get('morning_from'), (5, 0))} until {at(sop.get('morning_until'), (12, 0))} or the call, whichever is "
+        "first. Show-rate SOP: the booking confirmation, the pre-call email and the morning confirm.",
         "A filled STL field in GHL wins over the message times. When they disagree the row says Check.",
         "A booked call counts when it was booked inside the window" if ev["settings_used"]["count_rule"] == "booked_at"
         else "A booked call counts when it happens inside the window",
     ]
-    rules[-1] += (", it was not cancelled, and GHL does not mark the lead unqualified (stage or STL Outcome Reason). "
-                  "Lead replied and Showed are outcomes, so they are left out of the SOP rate.")
+    rules[-1] += (", it was not canceled, and GHL does not mark the lead unqualified (stage or STL Outcome Reason). "
+                  "A person who filled the form twice is one lead. Lead replied and Showed are outcomes, so they are "
+                  "left out of the SOP rate.")
     fr = ev["field_report"]
     facts = [f"STL fields found in GHL: {len(fr['found'])} of {len(fr['found']) + len(fr['missing'])}. "
              f"{fr['leads_with_any']} of {plural(fr['leads'], 'lead')} have any box field filled; the rest of the "

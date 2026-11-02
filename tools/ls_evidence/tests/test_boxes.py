@@ -50,8 +50,8 @@ def msgs(*specs):
     return S.norm_msgs({"msgs": out}, {}, SOP)
 
 
-def lead(ms, t0=T0, now=LATE, zone="eastern", fields=None, ok=True, early_missing=False):
-    boxes, facts = S.lead_boxes(t0, zone, ms, SOP, now, fields or {}, ok, early_missing)
+def lead(ms, t0=T0, now=LATE, zone="eastern", fields=None, ok=True, known_from=None):
+    boxes, facts = S.lead_boxes(t0, zone, ms, SOP, now, fields or {}, ok, known_from)
     return boxes
 
 
@@ -100,6 +100,16 @@ class TripleDialTest(unittest.TestCase):
         self.assertEqual(b["a"], S.YES)
         self.assertIn("came in after hours, so the clock started Tue Oct 20, 8am ET", b["why"])
 
+    def test_night_touch_is_measured_from_the_form(self):
+        t0 = T("2026-10-20T03:00:00")       # Mon 11pm EDT
+        ms = msgs(("s", "2026-10-20T03:01:00", "sms"), ("a", "2026-10-20T12:01:00", "dial"),
+                  ("b", "2026-10-20T12:02:00", "dial"), ("c", "2026-10-20T12:03:00", "dial"))
+        b = lead(ms, t0=t0)
+        self.assertEqual(b["sms1"]["a"], S.YES)
+        self.assertIn("text at 11:01pm, 1 min after the form", b["sms1"]["why"])
+        self.assertIn("3 dials by 8:03am, 3 min after the form", b["triple_dial"]["why"])
+        self.assertNotIn("before it", b["sms1"]["why"] + b["triple_dial"]["why"])
+
     def test_after_hours_in_central_time(self):
         t0 = T("2026-10-20T00:30:00")       # Mon 8:30pm EDT, but 7:30pm CDT: still open on a Central lead's clock
         ms = msgs(("a", "2026-10-20T00:31:00", "dial"), ("b", "2026-10-20T00:32:00", "dial"),
@@ -109,8 +119,39 @@ class TripleDialTest(unittest.TestCase):
         self.assertIn("Tue Oct 20, 9am ET", b["triple_dial"]["why"] + b["sms1"]["why"])
 
     def test_unknown_when_older_messages_missing(self):
-        self.assertEqual(lead([], early_missing=True)["triple_dial"]["a"], S.UNKNOWN)
+        cut = T("2026-10-19T20:00:00")          # only messages from 4pm EDT on were read
+        b = lead(msgs(("x", "2026-10-19T20:30:00", "sms")), known_from=cut)
+        for k in ("triple_dial", "sms1", "sms2", "lead_replied", "double_dial"):
+            self.assertEqual(b[k]["a"], S.UNKNOWN, k)
         self.assertEqual(lead([], ok=False)["triple_dial"]["a"], S.UNKNOWN)
+        self.assertEqual(lead([], ok=False)["double_dial"]["a"], S.UNKNOWN)
+        # proof found inside the part that was read still counts
+        ms = msgs(("a", "2026-10-19T14:01:00", "dial"), ("b", "2026-10-19T14:02:00", "dial"),
+                  ("c", "2026-10-19T14:03:00", "dial"))
+        self.assertEqual(lead(ms, known_from=T("2026-10-19T14:01:00"))["triple_dial"]["a"], S.YES)
+
+    def test_answered_dial_with_no_length_says_check(self):
+        b = lead(msgs(("a", "2026-10-19T14:01:00", "dial", {"status": "completed"})))
+        self.assertEqual(b["triple_dial"]["a"], S.YES)
+        self.assertIn("may have been a voicemail", b["triple_dial"]["check"])
+        self.assertEqual(b["sms1"]["a"], S.NOT_DUE)
+        self.assertIn("may have been a voicemail", b["sms1"]["check"])
+
+    def test_nine_pm_next_day_rule(self):
+        # 8:50pm EDT: before the 9pm cutoff, so the dials were due right away
+        ms = msgs(("a", "2026-10-20T12:01:00", "dial"), ("b", "2026-10-20T12:02:00", "dial"),
+                  ("c", "2026-10-20T12:03:00", "dial"))
+        b = lead(ms, t0=T("2026-10-20T00:50:00"))["triple_dial"]
+        self.assertEqual(b["a"], S.NO)
+        self.assertNotIn("after hours", b["why"])
+        # 9:05pm EDT: next morning at 8am
+        b = lead(ms, t0=T("2026-10-20T01:05:00"))["triple_dial"]
+        self.assertEqual(b["a"], S.YES)
+        self.assertIn("clock started Tue Oct 20, 8am ET", b["why"])
+        # 6:30am EDT: before opening, so 8am the same day
+        ms = msgs(("a", "2026-10-20T12:01:00", "dial"), ("b", "2026-10-20T12:02:00", "dial"),
+                  ("c", "2026-10-20T12:04:00", "dial"))
+        self.assertEqual(lead(ms, t0=T("2026-10-20T10:30:00"))["triple_dial"]["a"], S.YES)
 
 
 class Sms1Test(unittest.TestCase):
@@ -166,6 +207,19 @@ class DoubleDialTest(unittest.TestCase):
     def test_auto_reply_is_not_a_reply(self):
         self.assertEqual(lead(msgs(("r", "2026-10-19T15:00:00", "auto")))["lead_replied"]["a"], S.NO)
 
+    def test_stop_reply_needs_no_double_dial(self):
+        ms = S.norm_msgs({"msgs": [{"id": "r", "when": "2026-10-19T15:00:00Z", "dir": "inbound", "type": "TYPE_SMS",
+                                    "status": "delivered", "stop": True}]}, {}, SOP)
+        b = lead(ms)
+        self.assertEqual(b["double_dial"]["a"], S.NOT_DUE)
+        self.assertIn("STOP", b["double_dial"]["why"])
+        self.assertEqual(b["lead_replied"]["a"], S.YES)
+
+    def test_short_call_in_is_a_reply_not_a_talk(self):
+        b = lead(msgs(("r", "2026-10-19T15:00:00", "callin", {"duration": 12})))
+        self.assertEqual(b["double_dial"]["a"], S.NO)
+        self.assertIn("call to us (short)", b["double_dial"]["why"])
+
 
 class LadderTest(unittest.TestCase):
     def test_sms2_window_edges(self):
@@ -175,8 +229,12 @@ class LadderTest(unittest.TestCase):
             self.assertEqual(b["a"], want, when)
 
     def test_sms1_is_never_sms2(self):
-        # a late SMS 1 that lands in the SMS 2 window is still SMS 1
-        self.assertEqual(lead(msgs(("s1", "2026-10-19T17:30:00", "sms")))["sms2"]["a"], S.YES)
+        # a late SMS 1 that lands in the SMS 2 window is still SMS 1, so SMS 2 is a No
+        b = lead(msgs(("s1", "2026-10-19T17:30:00", "sms")))
+        self.assertEqual((b["sms1"]["a"], b["sms2"]["a"]), (S.NO, S.NO))
+        self.assertIn("first text 3 h 30 min after the form", b["sms1"]["why"])
+        b = lead(msgs(("s1", "2026-10-19T17:30:00", "sms"), ("s2", "2026-10-19T17:45:00", "sms")))
+        self.assertEqual((b["sms1"]["a"], b["sms2"]["a"]), (S.NO, S.YES))
         b = lead(msgs(("s1", "2026-10-19T14:02:00", "sms")))
         self.assertEqual(b["sms2"]["a"], S.NO)
         self.assertIn("no text Mon Oct 19, 1pm to 2pm", b["sms2"]["why"])
@@ -199,6 +257,15 @@ class LadderTest(unittest.TestCase):
         b = lead(ms)
         self.assertEqual((b["sms2"]["a"], b["sms3"]["a"]), (S.NOT_DUE, S.NOT_DUE))
         self.assertIn("so the texts stop", b["sms2"]["why"])
+
+    def test_reply_inside_the_window_before_a_text_stops_it(self):
+        ms = msgs(("s1", "2026-10-19T14:02:00", "sms"), ("r", "2026-10-19T17:20:00", "smsin"))   # 3h20 in, no SMS 2
+        b = lead(ms)
+        self.assertEqual((b["sms2"]["a"], b["sms3"]["a"]), (S.NOT_DUE, S.NOT_DUE))
+        self.assertIn("inside the SMS 2 window and before a text went", b["sms2"]["why"])
+        # a reply after the window closed does not excuse a missed SMS 2
+        ms = msgs(("s1", "2026-10-19T14:02:00", "sms"), ("r", "2026-10-19T18:30:00", "smsin"))
+        self.assertEqual(lead(ms)["sms2"]["a"], S.NO)
 
     def test_reply_after_sms2_stops_only_sms3(self):
         ms = msgs(("s1", "2026-10-19T14:02:00", "sms"), ("s2", "2026-10-19T17:10:00", "sms"),
@@ -237,7 +304,7 @@ class FieldTest(unittest.TestCase):
 
     def test_yes_no_shapes(self):
         for v, want in (("Yes", True), (["Yes"], True), ("TRUE", True), (1, True), ("No", False), (["no"], False),
-                        ("0", False), ("", None), ("maybe", None), (None, None)):
+                        ("0", False), ("", None), ("maybe", None), (None, None), ("Showed", True), ("No Show", False)):
             self.assertEqual(S.yes_no(v), want, repr(v))
 
     def test_lead_in_field_needs_a_time_of_day(self):
@@ -262,8 +329,8 @@ def call(start, booked, status="confirmed", cid="c1"):
     return {"_start": T(start), "_booked": T(booked), "status": status, "contactId": cid}
 
 
-def cboxes(c, ms, now=LATE, zone="eastern", notes=None, fields=None, stage="", latest=True, t0=T0):
-    return S.call_boxes(c, t0, zone, ms, SOP, now, notes, fields, stage, latest)
+def cboxes(c, ms, now=LATE, zone="eastern", notes=None, fields=None, stage="", latest=True, t0=T0, stage_at=None):
+    return S.call_boxes(c, t0, zone, ms, SOP, now, notes, fields, stage, latest, stage_at=stage_at)
 
 
 class CallBoxesTest(unittest.TestCase):
@@ -305,6 +372,14 @@ class CallBoxesTest(unittest.TestCase):
         self.assertEqual(cboxes(c, msgs(("m", "2026-10-22T13:00:00", "sms")))["morning_confirm"]["a"], S.YES)
         self.assertEqual(cboxes(c, msgs(("m", "2026-10-22T08:00:00", "sms")))["morning_confirm"]["a"], S.NO)  # 4am
         self.assertEqual(cboxes(c, msgs(("m", "2026-10-22T13:00:00", "dead")))["morning_confirm"]["a"], S.NO)
+        # a text at 1pm for a 2pm call is not a morning confirm
+        b = cboxes(c, msgs(("m", "2026-10-22T17:00:00", "sms")))["morning_confirm"]
+        self.assertEqual(b["a"], S.NO)
+        self.assertIn("(from 5am to 12pm)", b["why"])
+        # a 9am call: the morning ends when the call starts
+        c9 = call("2026-10-22T13:00:00", "2026-10-20T15:40:00")
+        self.assertEqual(cboxes(c9, msgs(("m", "2026-10-22T12:30:00", "sms")))["morning_confirm"]["a"], S.YES)
+        self.assertEqual(cboxes(c9, msgs(("m", "2026-10-22T13:10:00", "sms")))["morning_confirm"]["a"], S.NO)
 
     def test_same_day_afternoon_booking_has_no_morning(self):
         c = call("2026-10-22T23:00:00", "2026-10-22T20:30:00")      # booked 4:30pm for 7pm
@@ -326,13 +401,22 @@ class CallBoxesTest(unittest.TestCase):
         self.assertEqual(cboxes(past, [])["showed"]["a"], S.YES)
         self.assertEqual(cboxes(dict(past, status="noshow"), [])["showed"]["a"], S.NO)
         c = dict(past, status="confirmed")
-        self.assertEqual(cboxes(c, [], stage="No Show")["showed"]["a"], S.NO)
-        self.assertEqual(cboxes(c, [], stage="Follow Up")["showed"]["a"], S.YES)
-        self.assertEqual(cboxes(c, [], stage="Follow Up", latest=False)["showed"]["a"], S.UNKNOWN)
+        after, before = T("2026-10-22T18:40:00"), T("2026-10-21T12:00:00")
+        self.assertEqual(cboxes(c, [], stage="No Show", stage_at=after)["showed"]["a"], S.NO)
+        b = cboxes(c, [], stage="Follow Up", stage_at=after)["showed"]
+        self.assertEqual(b["a"], S.YES)
+        self.assertIn("deal moved to Follow Up on Thu Oct 22, 2:40pm, after the call", b["why"])
+        self.assertEqual(cboxes(c, [], stage="Follow Up", latest=False, stage_at=after)["showed"]["a"], S.UNKNOWN)
+        # a stage set before the call, or with no change time, says nothing about the call
+        self.assertEqual(cboxes(c, [], stage="Follow Up", stage_at=before)["showed"]["a"], S.UNKNOWN)
+        self.assertEqual(cboxes(c, [], stage="No Show")["showed"]["a"], S.UNKNOWN)
         self.assertEqual(cboxes(c, [], notes=[{"when": "2026-10-22T19:00:00Z", "text": "No-show, texted"}])
                          ["showed"]["a"], S.NO)
         self.assertEqual(cboxes(c, [], notes=[{"when": "2026-10-22T19:00:00Z", "text": "OUTCOME: talked"}])
                          ["showed"]["a"], S.YES)
+        # an OUTCOME note from the triage call an hour before is not the meeting's outcome
+        self.assertEqual(cboxes(c, [], notes=[{"when": "2026-10-22T17:00:00Z", "text": "OUTCOME: will join"}])
+                         ["showed"]["a"], S.UNKNOWN)
         self.assertEqual(cboxes(c, [], fields={"showed": "Yes"})["showed"]["a"], S.YES)
         self.assertEqual(cboxes(c, [])["showed"]["a"], S.UNKNOWN)
         ahead = call("2026-11-20T18:00:00", "2026-11-10T15:40:00")
@@ -384,14 +468,24 @@ class ZoneTest(unittest.TestCase):
             self.assertEqual(S.zone_of(txt), want, txt)
 
     def test_local_round_trip_across_dst(self):
-        # the night clocks fall back: 12:30am EDT and 3:30am EST (1am to 2am happens twice, so it is skipped)
-        for iso in ("2026-11-01T04:30:00", "2026-11-01T08:30:00", "2026-03-08T06:30:00", "2026-07-01T12:00:00"):
+        # the night clocks fall back, before and after every zone's switch (1am to 2am local happens twice, so an
+        # instant inside that repeated hour cannot round-trip and is skipped)
+        for iso in ("2026-11-01T04:30:00", "2026-11-01T11:30:00", "2026-03-08T06:30:00", "2026-07-01T12:00:00"):
             u = T(iso)
             for z in ("eastern", "central", "pacific", "arizona"):
                 self.assertEqual(S.to_utc(S.local(u, z), z), u, (iso, z))
         self.assertEqual(S.local(T("2026-11-01T13:00:00"), "eastern").hour, 8)     # EST after the switch
         self.assertEqual(S.local(T("2026-10-31T13:00:00"), "eastern").hour, 9)     # EDT before it
         self.assertEqual(S.local(T("2026-07-01T19:00:00"), "arizona").hour, 12)    # no daylight time
+        # each zone switches at 2am on its own clock: Central falls back at 07:00 UTC, an hour after Eastern
+        self.assertEqual(S.local(T("2026-11-01T06:30:00"), "central").hour, 1)     # 1:30am CDT
+        self.assertEqual(S.local(T("2026-11-01T07:30:00"), "central").hour, 1)     # 1:30am CST
+        self.assertEqual(S.to_utc(dt.datetime(2026, 11, 1, 0, 0), "central"), T("2026-11-01T05:00:00"))
+        self.assertEqual(S.local(T("2026-03-08T08:30:00"), "central").hour, 3)     # 3:30am CDT, just after the jump
+        self.assertEqual(S.local(T("2026-03-08T09:30:00"), "pacific").hour, 1)     # still 1:30am PST
+        for iso in ("2026-11-01T05:30:00", "2026-11-01T06:30:00", "2026-11-01T07:30:00", "2026-11-01T09:30:00"):
+            for z in ("eastern", "central", "mountain", "pacific"):
+                self.assertEqual(S.offset_hours(z, T(iso)) - S.ZONES[z][0] in (0, 1), True)
 
 
 if __name__ == "__main__":

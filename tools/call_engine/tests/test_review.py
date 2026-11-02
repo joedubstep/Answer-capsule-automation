@@ -86,8 +86,8 @@ class RenderSalesTests(ReviewBase):
         c = row["content"]
         self.assertTrue(c.startswith("<b>OUTCOME:</b>"))
         self.assertNotIn("TOP SEVERITY", c)
-        self.assertIn('[04:44](https://fathom.video/calls/111111111?timestamp=284) Claim about Surven with no source: '
-                      '"We\'ve been in business for three years and it is the only thing we do."', c)
+        self.assertIn('[04:44](https://fathom.video/calls/111111111?timestamp=284) Said leads about families: '
+                      '"We get you more leads every week and it is the only thing we do."', c)
         self.assertIn("- [ ] PDF of the plan. Due Fri 10/30.", c)
         self.assertIn("(18 of 19 passed)", c)
         self.assertIn("[00:09](https://fathom.video/calls/111111111?timestamp=9) good time ask", c)
@@ -111,11 +111,12 @@ class RenderSalesTests(ReviewBase):
 
     def test_cleared_flag_shows_in_notes(self):
         rv = good_review()
-        rv["flags_review"]["3"] = {"status": "cleared", "why": "describes the offer page, checked by listening"}
+        self.assertEqual(self.packet["flags"][1]["ts"], "05:12")
+        rv["flags_review"]["2"] = {"status": "cleared", "why": "names a competitor's product, checked by listening"}
         self.write_review(rv)
         self.assertEqual(self.rv.render(RID)[0], 0)
         c = self.load("row.json")["content"]
-        self.assertIn("Cleared flag at 05:12 (unverified_claim): describes the offer page", c)
+        self.assertIn("Cleared flag at 05:12 (banned_name): names a competitor's product", c)
         self.assertNotIn("The scripts are based on", c.split("<toggle>")[0])
 
     def test_email_copy_check_blocks(self):
@@ -141,11 +142,15 @@ class RenderSalesTests(ReviewBase):
 
     def test_extra_flag_from_listening(self):
         rv = good_review()
-        rv["extra_flags"] = [{"rule": "unverified_claim", "ts": "06:00", "quote": "We are the top team in the state."}]
+        rv["extra_flags"] = [{"rule": "patients", "ts": "06:00", "quote": "Your patients will get a tour the same week."}]
         self.write_review(rv)
         self.assertEqual(self.rv.render(RID)[0], 0)
-        self.assertIn('[06:00](https://fathom.video/calls/111111111?timestamp=360) Claim about Surven with no source: '
-                      '"We are the top team in the state."', self.load("row.json")["content"])
+        c = self.load("row.json")["content"]
+        self.assertIn('[06:00](https://fathom.video/calls/111111111?timestamp=360) Said patients: '
+                      '"Your patients will get a tour the same week."', c)
+        sec = c.split("<b>FLAGS</b>")[1].split("<b>OBJECTIONS</b>")[0]
+        order = [sec.index("[%s]" % ts) for ts in ("00:09", "05:12", "06:00", "04:44")]
+        self.assertEqual(order, sorted(order))                      # merged in by severity, then time
         rv["extra_flags"][0]["rule"] = "invented_client"
         self.write_review(rv)
         code, errs = self.rv.render(RID)[:2]

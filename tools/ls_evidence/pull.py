@@ -5,8 +5,8 @@
 Reads: the contact custom field list (to find the STL fields by name), the Leadsuite Pipeline and its deals, every
 contact tagged leadsuite, and for each lead since ads went live: its conversations and every message time stamp
 (calls with status and direction, texts and emails in and out; never message text), plus the Discovery Call and Lead
-Suite calendars. For leads with a booked call it also reads their GHL notes and the length of their answered calls
-(from the call record, else the transcript's word count, never the words). Never writes to GHL.
+Suite calendars. For answered calls with no length it reads the call record, else the transcript's word count (never
+the words). For leads with a booked call it also reads their GHL notes. Never writes to GHL.
 Phone numbers and emails are never kept: duplicates are found with a one-way hash.
 """
 import argparse
@@ -28,13 +28,13 @@ CONVS_PER_CONTACT = 3
 MSG_PAGES = 5           # 100 messages a page, per conversation, newest first
 OPP_PAGES = 5
 CONTACT_PAGES = 20
-MAX_CALL_DETAILS = 150
+MAX_CALL_DETAILS = 200
 MAX_NOTES_CONTACTS = 120
 NOTE_CHARS = 900
 CALL_TYPES = {"TYPE_CALL", "TYPE_CAMPAIGN_CALL", "TYPE_IVR_CALL"}
 TYPE_BY_NUM = {1: "TYPE_CALL", 2: "TYPE_SMS", 3: "TYPE_EMAIL", 8: "TYPE_CAMPAIGN_CALL", 28: "TYPE_ACTIVITY_OPPORTUNITY"}
 CONTACT_LIKE = re.compile(r"@|\d{3}[\s.-]?\d{3}[\s.-]?\d{4}")
-TEST_NAMES = {"test", "test test", "test test test", "joey", "joseph gargiulo", "jake kindall"}
+TEST_NAMES = {"test", "test test", "test test test"}     # people to skip go in settings.json exclude.contact_ids
 AUTO_REPLY_RX = re.compile(r"out of (the )?office|automatic reply|auto-?reply|autoreply|undeliverable|delivery status", re.I)
 OPT_OUT_RX = re.compile(r"^\s*(stop|stop all|unsubscribe|end|quit|remove me)\s*[.!]*\s*$", re.I)
 
@@ -43,23 +43,48 @@ def _h(s):
     return hashlib.sha256(s.encode()).hexdigest()[:10]
 
 
-def dup_keys(c):
-    """One-way keys for the duplicate check. The phone and email themselves are never kept."""
+def dup_keys(c, phones=("phone",)):
+    """One-way keys for the duplicate and staff checks. The phone and email themselves are never kept."""
     keys = []
-    digits = re.sub(r"\D", "", str(c.get("phone") or ""))[-10:]
-    if len(digits) == 10:
-        keys.append("p" + _h(digits))
+    for k in phones:
+        digits = re.sub(r"\D", "", str(c.get(k) or ""))[-10:]
+        if len(digits) == 10:
+            keys.append("p" + _h(digits))
     em = str(c.get("email") or "").strip().lower()
     if "@" in em:
         keys.append("e" + _h(em))
     return keys
 
 
+def name_key(first, last):
+    """A one-way key for a full name (first and last both needed), so staff contacts are found without names here."""
+    full = re.sub(r"\s+", " ", f"{first or ''} {last or ''}").strip().lower()
+    return "n" + _h(full) if len(full.split(" ")) >= 2 else None
+
+
+def staff_keys(loc):
+    """One-way keys (phone, email, full name) of this location's GHL users, so a team member's own test contact is
+    never scored as a lead. ([], error) when the user list cannot be read."""
+    r = ghl.call("/users/", {"locationId": loc})
+    if not ghl.ok(r):
+        return [], str(r)[:160]
+    keys = set()
+    for u in r.get("users") or []:
+        if u.get("deleted"):
+            continue
+        keys.update(dup_keys(u, phones=("phone", "lcPhone")))
+        nk = name_key(u.get("firstName"), u.get("lastName"))
+        if nk:
+            keys.add(nk)
+    return sorted(keys), None
+
+
 def first_name(c):
+    """A first name with no digits in it. A name field that holds part of a phone number, like "(410)", is no name."""
     for v in (c.get("firstName"), (c.get("contactName") or "").split(" ")[0]):
         v = str(v or "").strip()
-        if v and not CONTACT_LIKE.search(v):
-            return v[:1].upper() + v[1:]
+        if v and not CONTACT_LIKE.search(v) and not re.search(r"\d", v) and re.search(r"[^\W\d_]", v):
+            return (v[:1].upper() + v[1:])[:40]
     return ""
 
 
@@ -81,6 +106,7 @@ def slim_contact(c, field_ids):
         "dnd": bool(c.get("dnd")),
         "fields": fields,
         "dup": dup_keys(c),
+        "name_key": name_key(c.get("firstName"), c.get("lastName")),
     }
 
 
@@ -179,7 +205,7 @@ def pull(p, settings, now=None, max_leads=250, workers=WORKERS, probe=0, log=Non
     loc = p["location"]
     live = score_mod.live_start_utc(settings)
     raw = {"pulled_at": now.isoformat(), "location_key": p["key"], "location_id": loc, "probe": bool(probe),
-           "joey_contact": p.get("joey_contact"), "stages": {}, "field_ids": {}, "field_how": {},
+           "joey_contact": p.get("joey_contact"), "staff": [], "stages": {}, "field_ids": {}, "field_how": {},
            "leads": {}, "messages": {}, "call_details": {}, "notes": {}, "events": [], "errors": [],
            "bounds": {"max_leads": max_leads}, "counts": {}}
     errors = raw["errors"]
@@ -192,6 +218,9 @@ def pull(p, settings, now=None, max_leads=250, workers=WORKERS, probe=0, log=Non
         errors.append(["customFields", str(cf_list)[:160]])
     raw["field_ids"], raw["field_how"] = prof.resolve_fields(cf_list if isinstance(cf_list, list) else None)
     fids = raw["field_ids"]
+    raw["staff"], err = staff_keys(loc)
+    if err:
+        errors.append(["users", err])
 
     # the Leadsuite Pipeline: stage names and every deal
     opps_by_contact = {}
@@ -214,7 +243,8 @@ def pull(p, settings, now=None, max_leads=250, workers=WORKERS, probe=0, log=Non
                 lst = opps_by_contact.setdefault(cid, [])
                 if all(x["id"] != o.get("id") for x in lst):
                     lst.append({"id": o.get("id"), "stageId": o.get("pipelineStageId"), "status": o.get("status"),
-                                "createdAt": o.get("createdAt"), "updatedAt": o.get("updatedAt")})
+                                "createdAt": o.get("createdAt"), "updatedAt": o.get("updatedAt"),
+                                "stageAt": o.get("lastStageChangeAt")})
         else:
             errors.append(["opportunities", str(r)[:160]])
     raw["counts"]["pipeline_deals"] = sum(len(v) for v in opps_by_contact.values())
@@ -295,21 +325,24 @@ def pull(p, settings, now=None, max_leads=250, workers=WORKERS, probe=0, log=Non
             raw["messages"][cid] = block
             errors += errs
 
-    # booked leads: notes, and the length of answered calls that have none
+    # booked leads: notes. Every lead: the length of answered calls that have none (an auto-dialer call has no length
+    # in GHL, and without it a 10 second voicemail pickup would look like a talk). Booked leads first, then the newest.
     sales = [e for e in raw["events"] if not e["deleted"] and e["title_kind"] != "client"
              and (e["cal"] == "discovery" or e["title_kind"] == "discovery")]
     booked = [cid for cid in dict.fromkeys(e["contactId"] for e in sales) if cid in raw["messages"]]
     if len(booked) > MAX_NOTES_CONTACTS:
         errors.append(["bound", f"{len(booked)} booked leads, read notes for {MAX_NOTES_CONTACTS}"])
+    booked_set = set(booked)
     jobs = []
-    for cid in booked:
-        for m in raw["messages"][cid]["msgs"]:
+    for cid, block in raw["messages"].items():
+        for m in block["msgs"]:
             if (m.get("type") in CALL_TYPES and str(m.get("status") or "").lower() == "completed"
                     and m.get("duration") in (None, 0)):
-                jobs.append(m)
+                jobs.append((cid in booked_set, str(m.get("when") or ""), m))
+    jobs = [m for _, _, m in sorted(jobs, key=lambda x: (x[0], x[1]), reverse=True)]
     if len(jobs) > MAX_CALL_DETAILS:
         errors.append(["bound", f"{len(jobs)} answered calls with no length, read {MAX_CALL_DETAILS}"])
-        jobs = sorted(jobs, key=lambda m: str(m.get("when") or ""), reverse=True)[:MAX_CALL_DETAILS]
+        jobs = jobs[:MAX_CALL_DETAILS]
     with cf.ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         nf = {ex.submit(ghl.notes, cid): cid for cid in booked[:MAX_NOTES_CONTACTS]}
         df = {ex.submit(call_detail, loc, m): m["id"] for m in jobs}

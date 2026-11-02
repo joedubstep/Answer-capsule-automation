@@ -19,6 +19,7 @@ Each lead is built to test one or two rules (expected box answers in portal orde
   Taylor 95  only in the pipeline (no tag); Central time; auto-dial answered, length from transcript;
              pre-call email at 4:30pm Central the day DST ended (No); no-show                        call YNNYN
 """
+import copy
 import datetime as dt
 import json
 import os
@@ -71,9 +72,10 @@ def contact(cid, first, last, added, phone, tags=("leadsuite",), fields=None, tz
             "timezone": tz, "dnd": False, "customFields": fields or [], "companyName": ""}
 
 
-def opp(oid, cid, stage, created, status="open"):
+def opp(oid, cid, stage, created, status="open", stage_at=None):
     return {"id": oid, "name": "x", "pipelineId": LS, "pipelineStageId": ST[stage], "status": status,
-            "contactId": cid, "createdAt": created, "updatedAt": created, "monetaryValue": 0,
+            "contactId": cid, "createdAt": created, "updatedAt": stage_at or created, "monetaryValue": 0,
+            "lastStageChangeAt": stage_at or created,
             "contact": {"id": cid, "name": "x", "phone": "+15550109999", "email": "x@example.com", "tags": []}}
 
 
@@ -243,6 +245,9 @@ def files():
         "conversations__search.json": {"conversations": [
             {"id": cv, "contactId": cid, "type": "TYPE_PHONE", "lastMessageDate": 1} for cid, (cv, _) in CONVS.items()]},
         "calendars__events.json": {"events": EVENTS},
+        "users.json": {"users": [{"id": "u1", "name": "Staff Example", "firstName": "Staff", "lastName": "Example",
+                                  "email": "staff@example.com", "phone": "+15550199999", "lcPhone": "+15550198888",
+                                  "deleted": False}]},
     }
     for cid, (cv, msgs) in CONVS.items():
         newest_first = sorted(msgs, key=lambda m: m["dateAdded"], reverse=True)
@@ -258,7 +263,7 @@ def files():
 
 def write_fake_dir(path, drop=(), patch=None):
     os.makedirs(path, exist_ok=True)
-    fs = files()
+    fs = copy.deepcopy(files())          # a test's patch never leaks into the shared fixtures
     if patch:
         patch(fs)
     for name, obj in fs.items():

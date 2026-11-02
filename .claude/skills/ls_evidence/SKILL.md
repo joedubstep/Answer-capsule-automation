@@ -22,8 +22,8 @@ Sundays. This page gives him the exact answers to type and keeps the full proof 
 - `config/surven.json`: `ghl.hq` ids (location, `pipelines.leadsuite`, `calendars.discovery_call`,
   `calendars.lead_suite_personal`) and `artifacts.ls_evidence` (the page URL).
 - `tools/ls_evidence/settings.json`: the contract target and window, the ads-live date and the pause that does not burn
-  the clock, the SOP time windows, the qualified rules, the contract conditions, and the optional
-  `portal.entered_through` date.
+  the clock, the SOP time windows (with the 9pm next-day rule), the qualified rules, the contacts to leave out
+  (`exclude.contact_ids`), the contract conditions, and the optional `portal.entered_through` date.
 - Surven HQ GoHighLevel, read-only, through `shared/ghl.py`. This needs the Surven HQ environment.
 - The last published page (its hidden state block says which rows were already listed).
 
@@ -63,7 +63,7 @@ out instead. Start EVERY command with `cd /home/user/aca &&`. Working files land
 - No phone numbers or email addresses on the page (Python scrubs them). First names and reply codes only.
 - Never invent a box answer or a call note. The notes on a call row come only from a GHL note or the Agent Meeting
   Brief; when there is none, the row asks Joey to write them.
-- Refund case wording (if you write anything beyond the final line): never use the word "chargeback", and say
+- Write nothing about the refund case beyond the final line. If you must mention the sales calls, say
   "contemporaneous transcripts", never "recordings".
 - Keep it cheap: one Python run (a few GHL reads per lead, about a minute), no model writing, no web searches.
 

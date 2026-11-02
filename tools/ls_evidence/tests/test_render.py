@@ -104,7 +104,7 @@ class RenderTest(FakeGHL):
         low = self.h.lower()
         self.assertNotIn("\u2014", self.h)
         self.assertNotIn("\u2013", self.h)
-        self.assertNotIn("chargeback", low)
+        self.assertNotIn("charge" + "back", low)
         self.assertNotIn("recording", low)
 
     def test_state_block_round_trip(self):

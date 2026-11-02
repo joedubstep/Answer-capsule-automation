@@ -29,7 +29,8 @@ updates in place every Sunday, so keep it pinned. You get no text from it.
      and the notes. The notes come from your GHL note on that call. If there is none, the row asks you to write 3 to
      5 sentences. It never makes notes up.
    - "Why each answer" under a row shows the time stamp behind every box.
-   - A row marked **Check** means a GHL box you ticked does not match the call and text times. Look before you enter it.
+   - A row marked **Check** means a GHL box you ticked does not match the call and text times, or an answered call
+     has no length in GHL (it may have been a voicemail). Look before you enter it.
    - A row marked **Changed** was on an earlier page, but an answer changed since (for example, the lead replied).
      Fix that row in the portal.
 4. **Evidence for the refund file.** Every lead since ads went live and every booked call, with every box and its
@@ -45,7 +46,8 @@ There are no phone numbers and no email addresses on the page. Each person is a 
 
 ## What it needs from you
 - Log each booked call's outcome in GHL (showed or no-show on the calendar, or move the deal) and leave a short note
-  that starts with "OUTCOME:". The page reads both.
+  that starts with "OUTCOME:". The page reads both. A note or a deal move only counts when it is made after the call
+  starts, so a note from the triage call is never read as the outcome.
 - Each row shows on the page once, the Sunday after it is finished. If you skip a Sunday, tell Claude
   "lead suite evidence now, entered through" and the last date you typed in. Every row after that date comes back.
   The evidence tables at the bottom always hold every row too.
@@ -61,7 +63,9 @@ In claude.ai, open Routines, find "LS Evidence" and switch it off. Or ask Claude
 ## For builders
 - Code: `tools/ls_evidence/` (`pull.py` reads GoHighLevel, `score.py` works out every box, the scoreboard and which
   rows are new, `render.py` builds the page, `run.py` runs it all, `profile.py` finds the ids and fields).
-- Rules and dates: `tools/ls_evidence/settings.json`, each block with its source.
+- Rules and dates: `tools/ls_evidence/settings.json`, each block with its source. Contacts to leave out go in
+  `exclude.contact_ids` (ids only). A contact with the same phone, email or full name as a GHL user is left out on its
+  own, matched by one-way keys, so no names live in this repo.
 - Runbook: `.claude/skills/ls_evidence/SKILL.md`. Routine: `routines/ls_evidence.md`.
 - Tests (offline, synthetic data): `python3 -m unittest discover -s tools/ls_evidence/tests -t .`
 - Test run on AGC data (read-only, publishes nothing): `python3 -m tools.ls_evidence.run --location agc --dry-run`

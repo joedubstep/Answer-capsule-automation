@@ -94,15 +94,15 @@ Run every tool from the repo root: `python3 -m tools.<tool>.<module> ...`. Tests
    - "residents" not "patients", "families" not "leads"
    - never "care home" or "enquiry" in client-facing text
    - no price before a call
-   - no statistics in prospect copy
    - never "audit", "assessment", "grade" or "score" in cold outreach
    - never "is now a bad time"
    - no emojis in outreach
-   - never invent client results: Surven has no client results yet, so say "market benchmark" instead
 6. **Joey writes anything he says out loud** (call scripts, VSLs, openers). For spoken material, give bullets,
    facts and objections, never a finished script.
-7. **Verify facts.** Every fact a prospect could see must come from a primary source with a link. Mark
-   anything inferred as inferred.
+7. **Verify facts.** A tool never states a fact it has not checked as its own. Any fact a tool looks up and
+   puts in front of a prospect (about their home, a license, a rule) comes from a primary source with a link.
+   Mark anything inferred as inferred. This covers what the tools find, not the numbers or client results
+   Joey chooses to use.
 8. **No Meta automation of any kind.** Never connect to or post on Meta surfaces.
 9. **Keep runs cheap.** Routines bill to Joey's weekly plan. Exit early when there is nothing new. Do the
    counting and joins in Python, not in the model. Ask the model only for judgment and writing. Keep context

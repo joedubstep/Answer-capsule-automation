@@ -70,18 +70,26 @@ class AnalyzeTests(unittest.TestCase):
         self.assertEqual(self.a["pitch_start"]["ts"], "05:00")      # screen share
 
     def test_flags_are_verbatim_with_links(self):
-        claim = [f for f in self.a["flags"] if f["rule"] == "unverified_claim"]
-        self.assertEqual([f["ts"] for f in claim], ["04:44", "05:12"])
-        self.assertEqual(claim[0]["quote"], "We've been in business for three years and it is the only thing we do.")
-        self.assertEqual(claim[0]["url"], URL + "?timestamp=284")
-        self.assertEqual(self.a["flags"][0]["severity"], "high")     # sorted most severe first
+        leads = [f for f in self.a["flags"] if f["rule"] == "leads_for_families"]
+        self.assertEqual([f["ts"] for f in leads], ["04:44"])
+        self.assertEqual(leads[0]["quote"], "We get you more leads every week and it is the only thing we do.")
+        self.assertEqual(leads[0]["url"], URL + "?timestamp=284")
+        banned = next(f for f in self.a["flags"] if f["rule"] == "banned_name")
+        self.assertEqual(banned["quote"], "The scripts are based on what works for our clients, and the virtual front "
+                                          "desk answers every new family for you.")   # the untimed line, word for word
+        self.assertEqual(banned["url"], URL + "?timestamp=312")
+        # sorted most severe first, then by time: the medium flag at 05:12 comes before the low one at 04:44
+        self.assertEqual([(f["severity"], f["ts"]) for f in self.a["flags"]],
+                         [("high", "00:09"), ("medium", "05:12"), ("low", "04:44")])
 
     def test_other_flags(self):
         rules = {(f["rule"], f["ts"]) for f in self.a["flags"]}
         self.assertIn(("good_time_ask", "00:09"), rules)
-        self.assertIn(("unverified_claim", "04:44"), rules)
-        self.assertIn(("unverified_claim", "05:12"), rules)
-        self.assertFalse(any(f["ts"] == "07:50" for f in self.a["flags"]))   # only Joey's lines are flagged
+        self.assertIn(("leads_for_families", "04:44"), rules)
+        self.assertIn(("banned_name", "05:12"), rules)
+        guest = {t["ts"] for t in tr.parse(load()) if t["speaker"] != "Joey Host"}
+        self.assertIn("03:35", guest)                                # Pat says "junk leads" there
+        self.assertFalse(any(f["ts"] in guest for f in self.a["flags"]))   # only Joey's lines are flagged
 
     def test_moves(self):
         mv = self.a["moves"]

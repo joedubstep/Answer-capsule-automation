@@ -29,7 +29,7 @@ def summary(ev):
     pct = (lambda x: "none due" if x["pct"] is None else f"{x['pct']}%")
     lines = [
         f"scoreboard: {b['qualified_booked']} of {b['target']} qualified calls booked ({b['booked_in_window']} booked "
-        f"in the window, {b['unqualified']} not qualified, {b['cancelled']} cancelled), {b['held']} showed; "
+        f"in the window, {b['unqualified']} not qualified, {b['cancelled']} canceled), {b['held']} showed; "
         f"window {w['live']} to {w['end']}, {w['used']} days used, {max(0, w['left'])} left",
         f"sop: leads {pct(s['leads'])} ({s['leads']['yes']} yes, {s['leads']['no']} no), calls {pct(s['calls'])} "
         f"({s['calls']['yes']} yes, {s['calls']['no']} no); {b['leads']} leads since ads went live",

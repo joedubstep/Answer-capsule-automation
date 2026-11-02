@@ -12,7 +12,7 @@ Every reply waits in Gmail as a draft. Nothing is ever sent to anyone but you.
 - **Plan requests.** When a home says yes to the plan, the draft already has the one-page plan attached as a PDF.
   It covers their home, the 3 things you would set up in the first 90 days, one thing they can try this week, and
   your booking link. Beds and care type are on it only when a state license record or the home's own website
-  shows them, with the link. There is no price on it, no stats and no promises.
+  shows them, with the link. There is no price on it and no promises.
 - **Google Voice texts.** A text from someone new gets a short draft reply. Sending it texts them back. Texts from
   your own business lines (your own tests and agent replies) are left alone.
 - **Client mail** (AGC, Splendor, your legacy client). It drafts the answer. AGC partner mail comes through
@@ -24,7 +24,7 @@ Every reply waits in Gmail as a draft. Nothing is ever sent to anyone but you.
   comes to you instead.
 - **Opt-outs.** If someone opted out but still has an E code or an open deal in GoHighLevel, it tells you to close it.
 
-Every draft goes through the Copy Checker first, so no dashes, no price and no stats ever reach a draft.
+Every draft goes through the Copy Checker first, so no dashes and no price ever reach a draft.
 
 ## When it runs
 

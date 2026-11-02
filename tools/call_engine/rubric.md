@@ -23,8 +23,7 @@ Where the coach and Surven's own rules disagree, Surven's rule wins:
 
 ## How to grade, in this order
 
-1. **Top severity first (X1).** Then the 3 questions (Q1 to Q3). Then the stages (S1 to S15). Then Joey's
-   directives (J1).
+1. **The 3 questions first (Q1 to Q3).** Then the stages (S1 to S15). Then Joey's directives (J1).
 2. Score each row `pass`, `partial`, `miss` or `n/a`, with a timestamp and one short line.
 3. Python pre-scores the rows it can see (`auto_checks`). Confirm each one, or override it and say why.
    Regexes miss paraphrases, and Fathom speaker labels can be off by a line.
@@ -32,24 +31,13 @@ Where the coach and Surven's own rules disagree, Surven's rule wins:
    "Ask how long the beds have been empty before you share the screen."
 5. List up to 3 things Joey did well, with timestamps. Only real ones.
 
-## X1. Top severity: invented client stories or results
+## Flags
 
-Surven has no client results yet. Any line that states or implies one is the worst thing on a call. It
-creates a reference that does not exist, and it can turn into a guarantee dispute.
-
-- Python flags these as `invented_client` (severity top). Each one goes on the page **quoted word for word,
-  with its timestamp link**, in the red box at the top. Never soften it, never summarize it.
-- If you hear one Python missed, add it to `extra_flags` with the exact words and the timestamp.
-- Clear a flag only when the words are not a claim about Surven (for example, the prospect talking about
-  their own residents), and write why. Cleared flags still show in the notes.
-- What it sounds like: "our clients see...", "one of our first clients got 16 tours", "we've spent $X on
-  ads for clients", "it's already proven on other homes", "99% of our clients", "we haven't had anyone get
-  less than", "I can send you our case studies".
-- Lines read off an offer page are not exempt. If a page line states a client total, a client count, or
-  hours of recordings reviewed, saying it out loud is flagged until there is a source.
-- Say instead: "market benchmark", "what homes in this niche see", and let the guarantee carry the risk.
-- `unverified_claim` (high) is the same family about Surven itself: years in business, "we tested",
-  hours reviewed, client-count scarcity lines ("capped at N, at M now"), "highest converting". Say only what is true today.
+- Python flags Joey's lines that match the table under "Banned on calls". Confirm or clear each one in
+  `flags_review`. Each one goes on the page quoted word for word, with its timestamp link.
+- If you hear one Python missed, add it to `extra_flags` with its id, the exact words and the timestamp.
+- Clear a flag only when the words are not what the flag says, and write why. Cleared flags still show in
+  the notes.
 - Do **not** flag general market facts about speed (Joey, 8/12), and do not fault a price that differs
   from the kit. Joey prices by what is delivered. Note it, do not grade it.
 
@@ -98,7 +86,7 @@ creates a reference that does not exist, and it can turn into a guarantee disput
   have to do or feel you should do. Two or more logistical objections stacked: bundle them into the
   refundable deposit (`deposit`). Emotional objections: go for the full close. Financing only after the
   break-even screen (`financing`).
-- **S14. Offer rules.** See below. Tier prescribed, guarantee matches the tier, deadline and scarcity true
+- **S14. Offer rules.** See below. Tier prescribed, guarantee matches the tier, deadline true
   (`guarantee`, `urgency`, `scarcity`).
 - **S15. Close and next step.** Ask for payment or the deposit on the call (`payment_close`, `deposit`).
   After a yes: payment in the call chat, onboarding booked and accepted on screen, support invite sent, all
@@ -126,7 +114,6 @@ creates a reference that does not exist, and it can turn into a guarantee disput
 - **Deadline.** Any deadline said on the call must match `campaign.price_raise_deadline_et` in
   `config/surven.json` (`deadline_mismatch`; the day after, when the price goes up, is fine too). If the
   Close-Call Kit shows a different date than config, config wins and the review says so.
-- **Scarcity only if true today.**
 - **Placement agents:** never tell an owner to drop them (`cancel_placement`). Keep them; stop being only
   dependent on them.
 - **Scope:** assisted living, memory care, board and care, independent living are in. Skilled nursing and
@@ -136,8 +123,6 @@ creates a reference that does not exist, and it can turn into a guarantee disput
 
 | id | severity | what |
 |---|---|---|
-| `invented_client` | top | made-up client story, result, number or reference |
-| `unverified_claim` | high | claim about Surven with no source |
 | `good_time_ask` | high | "is now a good time" |
 | `deadline_mismatch` | high | a deadline day that is not `campaign.price_raise_deadline_et` |
 | `cancel_placement` | high | telling them to drop placement agents |
@@ -153,7 +138,7 @@ copy checker, not to what Joey says out loud.
 
 - Joey's voice: short plain sentences, 4th-grade words, US English, no dashes, no emojis, state it and stop.
 - What it holds: one line recap in their words, what Joey owes and when, the agreed next step. Nothing else.
-- No price, no statistics, no client stories, never "patients" or "care home". Under 150 words.
+- No price, never "patients" or "care home". Under 150 words.
   Signed `Joey` on its own line.
 - It must pass `python3 -m tools.copy_check.check --context prospect_email`. `review.py render` runs it.
 - Skip it (`skip_email` with the reason) when Gmail shows Joey already followed up after the call.
@@ -167,10 +152,10 @@ plus 1 to 4 timestamps worth a listen.
 
 Prep picks the 3 reminders and up to 3 objections that fit the person (`prep.py pick`). Text lives in
 `rules.py`; ids:
-- Reminders: W1 (the 3 questions), W2 (ask then stop), W3 (faster, louder), W4 (no client stories),
-  W5 (timelines), W6 (extend the agents), W7 (decision maker early), W8 (capacity screen), W9 (why they never
-  bought), W10 (downsell by asking), W11 (problem before the doc), W12 (validate first), W13 (numbers, no
-  hype), W14 (route out fast), W15 (book the next call).
+- Reminders: W1 (the 3 questions), W2 (ask then stop), W3 (faster, louder), W5 (timelines), W6 (extend the
+  agents), W7 (decision maker early), W8 (capacity screen), W9 (why they never bought), W10 (downsell by
+  asking), W11 (problem before the doc), W12 (validate first), W13 (numbers, no hype), W14 (route out fast),
+  W15 (book the next call).
 - Objections to expect: O1 (placement agents), O2 (partner), O3 (think about it), O4 (can't afford ads),
   O5 (burned by an agency), O6 (who else have you done this for), O7 (send me a PDF), O8 (short staffed),
   O9 (pay before move-ins), O10 (too far).

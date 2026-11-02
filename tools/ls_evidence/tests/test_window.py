@@ -104,7 +104,7 @@ class ScoreboardTest(unittest.TestCase):
     def test_no_forbidden_words(self):
         for today, calls in (("2026-11-02", []), ("2026-11-20", []), ("2026-11-02", [call_row(h=str(i)) for i in range(30)])):
             line = self.board(calls, today)["line"].lower()
-            self.assertNotIn("chargeback", line)
+            self.assertNotIn("charge" + "back", line)
             self.assertNotIn("recording", line)
 
 

@@ -67,8 +67,8 @@ EMAIL_RX = re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)+")
 PHONE_RX = re.compile(r"(\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b")
 OUT_DIR = prof.OUT_DIR
 
-# US zones: (standard offset, observes daylight time). Daylight time switches on the Eastern rule in shared.et for every
-# zone (no tzdata needed), so on the two switch nights a non-Eastern lead's clock can be off by an hour for an hour.
+# US zones: (standard offset, observes daylight time). Daylight time runs from 2am local on the 2nd Sunday of March to
+# 2am local on the 1st Sunday of November, worked out per zone here (no tzdata needed).
 ZONES = {"eastern": (-5, True), "central": (-6, True), "mountain": (-7, True), "arizona": (-7, False),
          "pacific": (-8, True), "alaska": (-9, True), "hawaii": (-10, False)}
 ZONE_RX = [
@@ -120,7 +120,8 @@ def yes_no(v):
     s = norm(flat(v))
     if not s:
         return None
-    if s in ("yes", "y", "true", "1", "done", "sent", "x", "checked", "on", "completed") or s.startswith("yes"):
+    if s in ("yes", "y", "true", "1", "done", "sent", "x", "checked", "on", "completed", "showed", "show") \
+            or s.startswith("yes"):
         return True
     if s in ("no", "n", "false", "0", "not done", "none", "off", "not sent") or s.startswith("no "):
         return False
@@ -187,13 +188,23 @@ def zone_of(tz_text):
     return "eastern"
 
 
-def _dst(utc_dt):
-    return et.et_offset_hours(utc_dt) == -4
+def _nth_sunday(year, month, n):
+    d = dt.date(year, month, 1)
+    d += dt.timedelta(days=(6 - d.weekday()) % 7)
+    return d + dt.timedelta(weeks=n - 1)
+
+
+def _dst(utc_dt, base=-5):
+    """True while daylight time is on in a zone whose standard offset is `base` hours."""
+    u = utc_dt.astimezone(UTC)
+    start = dt.datetime.combine(_nth_sunday(u.year, 3, 2), dt.time(0), UTC) + dt.timedelta(hours=2 - base)
+    end = dt.datetime.combine(_nth_sunday(u.year, 11, 1), dt.time(0), UTC) + dt.timedelta(hours=1 - base)
+    return start <= u < end
 
 
 def offset_hours(zone, utc_dt):
     base, dst = ZONES.get(zone, ZONES["eastern"])
-    return base + (1 if dst and _dst(utc_dt) else 0)
+    return base + (1 if dst and _dst(utc_dt, base) else 0)
 
 
 def local(utc_dt, zone):
@@ -207,17 +218,18 @@ def to_utc(naive_local, zone):
     return (naive_local - dt.timedelta(hours=offset_hours(zone, guess))).replace(tzinfo=UTC)
 
 
-def in_quiet(utc_dt, zone, sop):
+def in_quiet(utc_dt, zone, sop, frm=None):
     q = sop.get("quiet_hours") or {}
-    f, t = hm(q.get("from"), (20, 45)), hm(q.get("to"), (8, 0))
+    f, t = hm(frm or q.get("from"), (20, 45)), hm(q.get("to"), (8, 0))
     lt = local(utc_dt, zone)
     cur = (lt.hour, lt.minute)
     return cur >= f or cur < t if f > t else f <= cur < t
 
 
-def out_of_quiet(utc_dt, zone, sop):
-    """The same moment if it is inside contact hours, else the next morning's opening time (lead's clock)."""
-    if not in_quiet(utc_dt, zone, sop):
+def out_of_quiet(utc_dt, zone, sop, frm=None):
+    """The same moment if it is inside contact hours, else the next morning's opening time (lead's clock). `frm`
+    overrides when the evening cutoff starts (the lead-in clock uses the 9pm next-day rule)."""
+    if not in_quiet(utc_dt, zone, sop, frm):
         return utc_dt, False
     t = hm((sop.get("quiet_hours") or {}).get("to"), (8, 0))
     lt = local(utc_dt, zone)
@@ -301,10 +313,14 @@ def lead_in(lead, live):
     return added, "contact created"
 
 
-def is_excluded(lead, joey_contact=None):
+def is_excluded(lead, joey_contact=None, exclude_ids=(), staff=()):
     tags = {norm(t) for t in lead.get("tags") or []}
     if lead.get("id") and lead.get("id") == joey_contact:
         return "Joey's own contact"
+    if lead.get("id") and lead.get("id") in set(exclude_ids or ()):
+        return "left out in settings"
+    if staff and ({*(lead.get("dup") or []), lead.get("name_key")} & set(staff)):
+        return "a GHL user's own contact"
     if tags & EXCLUDE_TAGS:
         return "test tag"
     v = norm(flat((lead.get("fields") or {}).get("test")))
@@ -338,12 +354,15 @@ def norm_msgs(block, details, sop):
             if secs == 0 and st == "completed":
                 secs = None
             e["secs"] = secs
+            # an answered call with no length in GHL still counts as a talk, but every box it decides says Check
             e["talk"] = st == "completed" and (secs is None or secs >= talk_min)
+            e["unsure"] = st == "completed" and secs is None
             e["kind"] = ("dial_dead" if st in dead_dial else "dial") if d == "outbound" else "call_in"
         elif typ == "TYPE_SMS" and d == "outbound":
             e["kind"] = "sms_dead" if st in dead_sms else "sms_out"
         elif typ in ("TYPE_SMS", "TYPE_SMS_REACTION") and d == "inbound":
             e["kind"] = "auto_in" if m.get("auto") else "sms_in"
+            e["stop"] = bool(m.get("stop"))
         elif typ == "TYPE_EMAIL" and d == "outbound":
             e["kind"] = "email_out"
             e["subject"] = m.get("subject")
@@ -366,20 +385,28 @@ def first(ms, kinds, start=None, end=None, skip=()):
     return None
 
 
+UNSURE = "call length is not in GHL, so it may have been a voicemail"
+
+
 def first_reach(ms, t0):
-    """The lead's first reply: a text, email or chat in, a call in, or a call of ours they picked up."""
+    """The lead's first reply: a text, email or chat in, a call in, or a call of ours they picked up. `talked` is a
+    real conversation; `unsure` means the call that decided it has no length in GHL."""
     floor = t0 - dt.timedelta(minutes=1)
     for m in ms:
         if m["t"] < floor:
             continue
         if m["kind"] in ("sms_in", "email_in", "msg_in"):
             how = {"sms_in": "text", "email_in": "email", "msg_in": "message"}[m["kind"]]
-            return {"t": m["t"], "how": how, "talked": False}
+            if m.get("stop"):
+                how = "opt-out text (STOP)"
+            return {"t": m["t"], "how": how, "talked": False, "unsure": False, "stop": bool(m.get("stop"))}
         if m["kind"] == "call_in":
-            return {"t": m["t"], "how": "call to us" + ("" if m["status"] == "completed" else " (missed)"),
-                    "talked": m["status"] == "completed"}
+            talked = bool(m.get("talk"))
+            how = "call to us" + ("" if talked else (" (missed)" if m["status"] != "completed" else " (short)"))
+            return {"t": m["t"], "how": how, "talked": talked, "unsure": bool(m.get("unsure")), "stop": False}
         if m["kind"] == "dial" and m.get("talk"):
-            return {"t": m["t"], "how": "picked up our call", "talked": True}
+            return {"t": m["t"], "how": "picked up our call", "talked": True, "unsure": bool(m.get("unsure")),
+                    "stop": False}
     return None
 
 
@@ -403,69 +430,93 @@ def apply_field(b, value, label):
 
 # ---------------------------------------------------------------- the 6 lead boxes
 
-def lead_boxes(t0, zone, ms, sop, now, fields=None, msgs_ok=True, early_missing=False):
+def lead_boxes(t0, zone, ms, sop, now, fields=None, msgs_ok=True, known_from=None):
+    """The 6 lead boxes. `known_from` is set when the message list was cut short: the time of the oldest message read.
+    A box whose window starts before it, with no proof found, is Unknown, never No."""
     fields = fields or {}
     grace = dt.timedelta(minutes=int(sop.get("grace_minutes") or 0))
     floor = t0 - dt.timedelta(minutes=1)
-    start, after_hours = out_of_quiet(t0, zone, sop)
+    start, after_hours = out_of_quiet(t0, zone, sop, sop.get("next_day_after") or "21:00")
     note = f" (came in after hours, so the clock started {fmt_et(start)} ET)" if after_hours else ""
     reach = first_reach(ms, t0)
+    cut = "older messages were not read (too many messages)"
     out = {}
+
+    def missing(ws):
+        return known_from is not None and ws < known_from
+
+    def since(t):
+        """How long after the form: from the form itself for a night-time touch, else from when the clock started."""
+        return gap(t0 if t < start else start, t)
+
+    def flag(b, unsure):
+        if unsure:
+            b["check"] = UNSURE
+        return b
 
     # 1. triple dial
     need = int(sop.get("dials_for_triple") or 3)
-    w_end = start + dt.timedelta(minutes=int(sop.get("triple_dial_minutes") or 5)) + grace
+    mins = int(sop.get("triple_dial_minutes") or 5)
+    w_end = start + dt.timedelta(minutes=mins) + grace
     dials = [m for m in ms if m["kind"] == "dial" and floor <= m["t"] <= w_end]
     talked = next((i for i, m in enumerate(dials) if m.get("talk")), None)
-    if early_missing:
-        b = box(UNKNOWN, "older messages were not read (too many messages)")
-    elif len(dials) >= need:
+    if len(dials) >= need:
         b = box(YES, f"{need} dials by {clock(et.to_et(dials[need - 1]['t']))}, "
-                     f"{gap(start, dials[need - 1]['t'])} after the form{note}", dials[need - 1]["t"])
+                     f"{since(dials[need - 1]['t'])} after the form{note}", dials[need - 1]["t"])
     elif talked is not None:
-        b = box(YES, f"dial {talked + 1} was answered at {clock(et.to_et(dials[talked]['t']))}{note}", dials[talked]["t"])
+        b = flag(box(YES, f"dial {talked + 1} was answered at {clock(et.to_et(dials[talked]['t']))}{note}",
+                     dials[talked]["t"]), dials[talked].get("unsure"))
     elif reach and reach["talked"] and reach["how"].startswith("call to us") and reach["t"] <= w_end:
-        b = box(NOT_DUE, f"they called us first, at {fmt_et(reach['t'])}", reach["t"])
+        b = flag(box(NOT_DUE, f"they called us first, at {fmt_et(reach['t'])}", reach["t"]), reach["unsure"])
     elif now < w_end:
         b = box(NOT_DUE, f"due by {fmt_et(w_end)}", pending=True)
+    elif missing(floor):
+        b = box(UNKNOWN, cut)
     elif not msgs_ok:
         b = box(UNKNOWN, "messages could not be read")
     else:
         f1 = first(ms, {"dial"}, floor)
-        bit = f"first dial {gap(start, f1['t'])} after the form" if f1 else "no dial found"
-        b = box(NO, f"{plural(len(dials), 'dial')} in the first {int(sop.get('triple_dial_minutes') or 5)} min; {bit}{note}",
-                f1["t"] if f1 else None)
+        bit = f"first dial {since(f1['t'])} after the form" if f1 else "no dial found"
+        b = box(NO, f"{plural(len(dials), 'dial')} in the first {mins} min; {bit}{note}", f1["t"] if f1 else None)
     out["triple_dial"] = b
 
-    # 2. SMS 1
+    # 2. SMS 1. The first text after the form is always SMS 1, on time or late, so it is never also SMS 2.
     w_end = start + dt.timedelta(minutes=int(sop.get("sms1_minutes") or 5)) + grace
-    s1 = first(ms, {"sms_out"}, floor, w_end)
-    if early_missing:
-        b = box(UNKNOWN, "older messages were not read (too many messages)")
-    elif s1:
-        b = box(YES, f"text at {clock(et.to_et(s1['t']))}, {gap(start, s1['t'])} after the form{note}", s1["t"])
+    first_text = first(ms, {"sms_out"}, floor)
+    s1 = first_text if first_text and first_text["t"] <= w_end else None
+    if s1:
+        b = box(YES, f"text at {clock(et.to_et(s1['t']))}, {since(s1['t'])} after the form{note}", s1["t"])
     elif reach and reach["talked"] and reach["t"] <= w_end:
-        b = box(NOT_DUE, f"they talked with us first, at {fmt_et(reach['t'])}", reach["t"])
+        b = flag(box(NOT_DUE, f"they talked with us first, at {fmt_et(reach['t'])}", reach["t"]), reach["unsure"])
     elif now < w_end:
         b = box(NOT_DUE, f"due by {fmt_et(w_end)}", pending=True)
+    elif missing(floor):
+        b = box(UNKNOWN, cut)
     elif not msgs_ok:
         b = box(UNKNOWN, "messages could not be read")
     else:
-        f1 = first(ms, {"sms_out"}, floor)
-        b = box(NO, (f"first text {gap(start, f1['t'])} after the form" if f1 else "no text found") + note,
-                f1["t"] if f1 else None)
+        b = box(NO, (f"first text {since(first_text['t'])} after the form" if first_text else "no text found")
+                + note, first_text["t"] if first_text else None)
     out["sms1"] = b
-    sms1_id = s1["id"] if s1 else None
+    skip = {first_text["id"]} if first_text else set()
 
     # 3. double dial right after a reply
     if not reach:
-        b = box(NOT_DUE, "no reply yet")
+        if not msgs_ok:
+            b = box(UNKNOWN, "messages could not be read")
+        elif missing(floor):
+            b = box(UNKNOWN, cut)
+        else:
+            b = box(NOT_DUE, "no reply yet")
+    elif reach["stop"]:
+        b = box(NOT_DUE, f"they texted STOP at {fmt_et(reach['t'])}, so no double dial", reach["t"])
     elif reach["talked"]:
-        b = box(NOT_DUE, f"they talked with us at {fmt_et(reach['t'])} ({reach['how']}), so no double dial was needed",
-                reach["t"])
+        b = flag(box(NOT_DUE, f"they talked with us at {fmt_et(reach['t'])} ({reach['how']}), so no double dial "
+                              f"was needed", reach["t"]), reach["unsure"])
     else:
         r0, moved = out_of_quiet(reach["t"], zone, sop)
-        w_end = r0 + dt.timedelta(minutes=int(sop.get("double_dial_minutes") or 10)) + grace
+        dmins = int(sop.get("double_dial_minutes") or 10)
+        w_end = r0 + dt.timedelta(minutes=dmins) + grace
         nd = int(sop.get("dials_for_double") or 2)
         dd = [m for m in ms if m["kind"] == "dial" and reach["t"] <= m["t"] <= w_end]
         ans = next((m for m in dd if m.get("talk")), None)
@@ -473,64 +524,63 @@ def lead_boxes(t0, zone, ms, sop, now, fields=None, msgs_ok=True, early_missing=
         if len(dd) >= nd:
             b = box(YES, f"{nd} dials within {gap(reach['t'], dd[nd - 1]['t'])} of {when}", dd[nd - 1]["t"])
         elif ans:
-            b = box(YES, f"called back and they picked up, {gap(reach['t'], ans['t'])} after {when}", ans["t"])
+            b = flag(box(YES, f"called back and they picked up, {gap(reach['t'], ans['t'])} after {when}", ans["t"]),
+                     ans.get("unsure"))
         elif now < w_end:
             b = box(NOT_DUE, f"due by {fmt_et(w_end)}", pending=True)
         elif not msgs_ok:
             b = box(UNKNOWN, "messages could not be read")
         else:
             f1 = first(ms, {"dial"}, reach["t"])
-            b = box(NO, f"{plural(len(dd), 'dial')} in the {int(sop.get('double_dial_minutes') or 10)} min after {when}"
+            b = box(NO, f"{plural(len(dd), 'dial')} in the {dmins} min after {when}"
                         + (f"; next dial {gap(reach['t'], f1['t'])} later" if f1 else "; no dial after it"),
                     f1["t"] if f1 else None)
     out["double_dial"] = b
 
+    def ladder(name, ws, we, moved, anchor_txt, skip_ids):
+        """SMS 2 or SMS 3: a text inside [ws, we]. A reply before the window, or inside it before any text went,
+        stops the texts (Not due)."""
+        span = f"{fmt_et(ws)} to {clock(et.to_et(we))}" + (" (moved past quiet hours)" if moved else "")
+        if reach and reach["t"] < ws:
+            return box(NOT_DUE, f"they replied ({reach['how']}) at {fmt_et(reach['t'])}, so the texts stop",
+                       reach["t"]), None
+        hit = first(ms, {"sms_out"}, ws, we + grace, skip=skip_ids)
+        if hit:
+            return box(YES, f"text at {fmt_et(hit['t'])}, {anchor_txt(hit['t'])}", hit["t"]), hit
+        if reach and reach["t"] <= we + grace:
+            return box(NOT_DUE, f"they replied ({reach['how']}) at {fmt_et(reach['t'])}, inside the {name} window "
+                                f"and before a text went, so the texts stop", reach["t"]), None
+        if now < we + grace:
+            return box(NOT_DUE, f"due {span}", pending=True), None
+        if missing(ws):
+            return box(UNKNOWN, cut), None
+        if not msgs_ok:
+            return box(UNKNOWN, "messages could not be read"), None
+        nx = first(ms, {"sms_out"}, ws, skip=skip_ids)
+        return box(NO, f"no text {span}" + (f"; next text {fmt_et(nx['t'])}" if nx else ""),
+                   nx["t"] if nx else None), None
+
     # 4. SMS 2 at plus 3 to 4 hours (only while there is no reply)
     h2 = sop.get("sms2_hours") or [3, 4]
     ws2, we2, moved2 = window(start + dt.timedelta(hours=h2[0]), dt.timedelta(hours=h2[1] - h2[0]), zone, sop)
-    s2 = None
-    span = f"{fmt_et(ws2)} to {clock(et.to_et(we2))}" + (" (moved past quiet hours)" if moved2 else "")
-    if reach and reach["t"] < ws2:
-        b = box(NOT_DUE, f"they replied ({reach['how']}) at {fmt_et(reach['t'])}, so the texts stop", reach["t"])
-    else:
-        s2 = first(ms, {"sms_out"}, ws2, we2 + grace, skip={sms1_id})
-        if s2:
-            b = box(YES, f"text at {fmt_et(s2['t'])}, {gap(start, s2['t'])} after the form", s2["t"])
-        elif now < we2 + grace:
-            b = box(NOT_DUE, f"due {span}", pending=True)
-        elif not msgs_ok:
-            b = box(UNKNOWN, "messages could not be read")
-        else:
-            nx = first(ms, {"sms_out"}, ws2, skip={sms1_id})
-            b = box(NO, f"no text {span}" + (f"; next text {fmt_et(nx['t'])}" if nx else ""), nx["t"] if nx else None)
-    out["sms2"] = b
+    out["sms2"], s2 = ladder("SMS 2", ws2, we2, moved2, lambda t: f"{gap(start, t)} after the form", skip)
 
     # 5. SMS 3 at plus 2 to 3 hours after SMS 2 (only while there is no reply)
     h3 = sop.get("sms3_hours_after_sms2") or [2, 3]
     anchor = s2["t"] if s2 else ws2
     ws3, we3, moved3 = window(anchor + dt.timedelta(hours=h3[0]), dt.timedelta(hours=h3[1] - h3[0]), zone, sop)
-    span = f"{fmt_et(ws3)} to {clock(et.to_et(we3))}" + (" (moved past quiet hours)" if moved3 else "")
-    if reach and reach["t"] < ws3:
-        b = box(NOT_DUE, f"they replied ({reach['how']}) at {fmt_et(reach['t'])}, so the texts stop", reach["t"])
-    else:
-        s3 = first(ms, {"sms_out"}, ws3, we3 + grace, skip={sms1_id, s2["id"] if s2 else None})
-        if s3:
-            b = box(YES, f"text at {fmt_et(s3['t'])}, {gap(anchor, s3['t'])} after SMS 2" + ("" if s2 else " was due"),
-                    s3["t"])
-        elif now < we3 + grace:
-            b = box(NOT_DUE, f"due {span}", pending=True)
-        elif not msgs_ok:
-            b = box(UNKNOWN, "messages could not be read")
-        else:
-            nx = first(ms, {"sms_out"}, ws3, skip={sms1_id, s2["id"] if s2 else None})
-            b = box(NO, f"no text {span}" + (f"; next text {fmt_et(nx['t'])}" if nx else ""), nx["t"] if nx else None)
-    out["sms3"] = b
+    out["sms3"], _ = ladder("SMS 3", ws3, we3, moved3,
+                            lambda t: f"{gap(anchor, t)} after SMS 2" + ("" if s2 else " was due"),
+                            skip | ({s2["id"]} if s2 else set()))
 
     # 6. lead replied
     if reach:
         b = box(YES, f"{reach['how']} at {fmt_et(reach['t'])}, {gap(t0, reach['t'])} after the form", reach["t"])
+        b = flag(b, reach["unsure"])
     elif not msgs_ok:
         b = box(UNKNOWN, "messages could not be read")
+    elif missing(floor):
+        b = box(UNKNOWN, cut)
     else:
         b = box(NO, "no reply so far")
     out["lead_replied"] = b
@@ -585,10 +635,12 @@ def merge_calls(events, leads, s_calls):
 
 
 def note_after(notes, start, hours=72):
+    """The first GHL note written from 10 minutes before the call to 3 days after it. A note from before that (a triage
+    call, a booking) is not about the call, so it is never read as the call's outcome or its notes."""
     best = None
     for n in notes or []:
         t = et.parse(n.get("when"))
-        if t and start - dt.timedelta(hours=2) <= t <= start + dt.timedelta(hours=hours) and n.get("text"):
+        if t and start - dt.timedelta(minutes=10) <= t <= start + dt.timedelta(hours=hours) and n.get("text"):
             if best is None or t < best[0]:
                 best = (t, n["text"])
     return best
@@ -601,8 +653,10 @@ def sentences(text, n=5, limit=600):
     return out if len(out) <= limit else out[:limit].rsplit(" ", 1)[0] + "..."
 
 
-def call_boxes(call, t0, zone, ms, sop, now, notes=None, fields=None, stage="", latest=False, msgs_ok=True):
-    """The 5 boxes for one booked call. Contact-level STL fields only apply when `fields` is passed (one booking)."""
+def call_boxes(call, t0, zone, ms, sop, now, notes=None, fields=None, stage="", latest=False, msgs_ok=True,
+               stage_at=None):
+    """The 5 boxes for one booked call. Contact-level STL fields only apply when `fields` is passed (one booking).
+    The deal stage only speaks for the latest past call, and only when GHL shows it changed after the call started."""
     fields = fields or {}
     start, booked = call["_start"], call["_booked"]
     out = {}
@@ -664,23 +718,25 @@ def call_boxes(call, t0, zone, ms, sop, now, notes=None, fields=None, stage="", 
         b["check"] = "email subject not shown in GHL"
     out["precall_email"] = b
 
-    # 4. morning confirm call or text, the morning of the call before it starts
+    # 4. morning confirm call or text: the morning of the call (lead's clock), before noon and before the call starts
     mo = hm(sop.get("morning_from"), (5, 0))
     mu = hm(sop.get("morning_until"), (12, 0))
     after_booking = booked + dt.timedelta(minutes=30)          # the booking confirmation itself is not the confirm
     m_start = max(to_utc(dt.datetime(lstart.year, lstart.month, lstart.day, mo[0], mo[1]), zone), after_booking)
-    m_until = to_utc(dt.datetime(lstart.year, lstart.month, lstart.day, mu[0], mu[1]), zone)
-    touch = next((m for m in ms if m["kind"] in ("dial", "sms_out") and m_start <= m["t"] < start), None)
-    if after_booking >= start or after_booking > m_until:
+    m_end = min(start, to_utc(dt.datetime(lstart.year, lstart.month, lstart.day, mu[0], mu[1]), zone))
+    touch = next((m for m in ms if m["kind"] in ("dial", "sms_out") and m_start <= m["t"] < m_end), None)
+    zl = "" if zone == "eastern" else f" {ZONE_LABEL[zone]} time"
+    if m_start >= m_end:
         b = box(NOT_DUE, f"booked {fmt_et(booked)}, the same day after the morning")
     elif touch:
         b = box(YES, f"{'call' if touch['kind'] == 'dial' else 'text'} at {fmt_et(touch['t'])}", touch["t"])
-    elif now < start:
+    elif now < m_end:
         b = box(NOT_DUE, f"due the morning of {fmt_day(lstart)}", pending=True)
     elif not msgs_ok:
         b = box(UNKNOWN, "messages could not be read")
     else:
-        b = box(NO, f"no call or text the morning of {fmt_day(lstart)} before the call")
+        b = box(NO, f"no call or text the morning of {fmt_day(lstart)} (from {clock(dt.datetime(2000, 1, 1, *mo))} "
+                    f"to {clock(local(m_end, zone))}{zl})")
     out["morning_confirm"] = b
 
     # 5. showed
@@ -689,18 +745,19 @@ def call_boxes(call, t0, zone, ms, sop, now, notes=None, fields=None, stage="", 
                     and (m.get("secs") or 0) >= tmin
                     and start - dt.timedelta(minutes=15) <= m["t"] <= start + dt.timedelta(minutes=90)), None)
     n = note_after(notes, start)
+    stage_after = latest and stage_at is not None and stage_at >= start
     if st in SHOWED_STATUS:
         b = box(YES, "marked showed in the calendar")
     elif st in NOSHOW_STATUS:
         b = box(NO, "marked no-show in the calendar")
     elif now < start:
         b = box(NOT_DUE, f"call is {fmt_et(start)}", pending=True)
-    elif latest and norm(stage) in NOSHOW_STAGES:
-        b = box(NO, f"deal stage is {stage}")
+    elif stage_after and norm(stage) in NOSHOW_STAGES:
+        b = box(NO, f"deal moved to {stage} on {fmt_et(stage_at)}, after the call time", stage_at)
     elif n and NOSHOW_NOTE_RX.search(n[1]):
         b = box(NO, f"GHL note on {fmt_et(n[0])} says no-show", n[0])
-    elif latest and norm(stage) in AFTER_CALL_STAGES:
-        b = box(YES, f"deal moved to {stage} after the call")
+    elif stage_after and norm(stage) in AFTER_CALL_STAGES:
+        b = box(YES, f"deal moved to {stage} on {fmt_et(stage_at)}, after the call", stage_at)
     elif talk_at:
         b = box(YES, f"talked on the phone at the meeting time ({fmt_et(talk_at['t'])})", talk_at["t"])
     elif n and OUTCOME_NOTE_RX.search(n[1]):
@@ -793,12 +850,13 @@ def build(raw, settings, now=None, prev=None, entered_through=None):
     stages = raw.get("stages") or {}
     joey = raw.get("joey_contact")
     excluded = {"test": 0, "before_live": 0, "duplicate": 0, "not_read": 0}
+    skip_ids = (settings.get("exclude") or {}).get("contact_ids") or []
 
     # leads
-    lead_rows, by_cid, seen_keys = [], {}, {}
+    lead_rows, by_cid, seen_keys, person = [], {}, {}, {}
     cand = []
     for cid, lead in (raw.get("leads") or {}).items():
-        if is_excluded(lead, joey):
+        if is_excluded(lead, joey, skip_ids, raw.get("staff")):
             excluded["test"] += 1
             continue
         t0, src = lead_in(lead, live)
@@ -818,13 +876,15 @@ def build(raw, settings, now=None, prev=None, entered_through=None):
         ms = norm_msgs(block, raw.get("call_details"), sop)
         msgs_ok = bool(block.get("ok", True))
         oldest = et.parse(block.get("oldest"))
-        early_missing = bool(block.get("truncated")) and oldest is not None and oldest > t0 + dt.timedelta(minutes=10)
+        known_from = oldest if block.get("truncated") and oldest else None
         opps = sorted(lead.get("opps") or [], key=lambda o: str(o.get("updatedAt") or o.get("createdAt") or ""))
         stage = stages.get(opps[-1].get("stageId"), "") if opps else ""
+        stage_at = et.parse(opps[-1].get("stageAt")) if opps else None
         dup_of = next((seen_keys[k] for k in lead.get("dup") or [] if k in seen_keys), None)
         for k in lead.get("dup") or []:
             seen_keys.setdefault(k, cid)
-        boxes, facts = lead_boxes(t0, zone, ms, sop, now, fields, msgs_ok, early_missing)
+        person[cid] = person.get(dup_of, dup_of) if dup_of else cid
+        boxes, facts = lead_boxes(t0, zone, ms, sop, now, fields, msgs_ok, known_from)
         q, qwhy = qualified(lead, stage, settings)
         code = code_str(fields.get("reply_code"))
         row = {
@@ -843,7 +903,7 @@ def build(raw, settings, now=None, prev=None, entered_through=None):
             excluded["duplicate"] += 1
             row["dup_of"] = short_hash(loc, dup_of)
         lead_rows.append(row)
-        by_cid[cid] = (row, lead, zone, ms, msgs_ok, stage)
+        by_cid[cid] = (row, lead, zone, ms, msgs_ok, stage, stage_at)
 
     # calls
     s_calls = settings.get("calls") or {}
@@ -852,30 +912,33 @@ def build(raw, settings, now=None, prev=None, entered_through=None):
     for e in merged:
         if e["_state"] == "booked":
             per_lead.setdefault(e["contactId"], []).append(e)
-    call_rows = []
+    call_rows, counted_slots = [], set()
     for e in merged:
-        row_l, lead, zone, ms, msgs_ok, stage = by_cid[e["contactId"]]
+        row_l, lead, zone, ms, msgs_ok, stage, stage_at = by_cid[e["contactId"]]
         booked_list = per_lead.get(e["contactId"], [])
         past = [x for x in booked_list if x["_start"] <= now]
         latest = bool(past) and past[-1] is e
         single = len(booked_list) == 1 and booked_list[0] is e
         t0 = et.parse(row_l["t0"])
         boxes = call_boxes(e, t0, zone, ms, sop, now, (raw.get("notes") or {}).get(e["contactId"]),
-                           (lead.get("fields") or {}) if single else None, stage, latest, msgs_ok)
+                           (lead.get("fields") or {}) if single else None, stage, latest, msgs_ok, stage_at)
         rule = s_calls.get("count_rule") or "booked_at"
         when = e["_booked"] if rule == "booked_at" else e["_start"]
         in_window = live <= when < win_end
-        counts = e["_state"] == "booked" and in_window and row_l["qualified"] and not row_l["duplicate"]
+        # one person who filled the form twice is one lead: their call counts once, on whichever record holds it
+        slot = (person.get(e["contactId"], e["contactId"]), e["_start"])
         if e["_state"] != "booked":
-            why = {"moved": "moved to a new time (the new booking counts)", "cancelled": "cancelled"}[e["_state"]]
+            why = {"moved": "moved to a new time (the new booking counts)", "cancelled": "canceled"}[e["_state"]]
         elif not in_window:
             why = "booked outside the 90-day window" if rule == "booked_at" else "outside the 90-day window"
-        elif row_l["duplicate"]:
-            why = "duplicate lead"
         elif not row_l["qualified"]:
             why = "not qualified: " + row_l["qualified_why"]
+        elif slot in counted_slots:
+            why = "same call as on this lead's other GHL record"
         else:
             why = "counts"
+            counted_slots.add(slot)
+        counts = why == "counts"
         n = note_after((raw.get("notes") or {}).get(e["contactId"]), e["_start"])
         brief = flat((lead.get("fields") or {}).get("meeting_brief"))
         if n:

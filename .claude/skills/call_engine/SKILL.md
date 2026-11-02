@@ -87,8 +87,7 @@ stop. Final message: `Call Engine: needs connectors <list>, add them in claude.a
      `below_break_even`, `rent`, `decision_makers`), leave unknowns as null. Add `signals` you have evidence
      for: `placement_agents`, `partner`, `burned`, `skeptic`, `trust_asker`, `send_info_asker`, `low_budget`,
      `small_home`, `many_empty` (8 or more empty), `staffing`, `rural`, `scope_risk`, `terms_asker`, and from
-     an earlier call review `prior_invented`, `prior_no_timeline`, `prior_price_early`, `prior_no_next_step`,
-     `objections_open`.
+     an earlier call review `prior_no_timeline`, `prior_price_early`, `prior_no_next_step`, `objections_open`.
 7. **Write each page** in `prep.json` under `page` (Joey's locked format, read live on the call, 2 to 3 words
    at a glance; shorter beats longer, one-word bullets are fine):
    - `qualifying`: 3 or 4 questions, tailored (beds and empty today, payer type, capacity, who else decides).
@@ -156,14 +155,14 @@ stop. Final message: `Call Engine: needs connectors <list>, add them in claude.a
       with the date. Write
       `/tmp/call_engine/<id>/review.json` exactly as the `tools/call_engine/review.py` docstring shows:
       - every rubric row scored, with a timestamp and one short line;
-      - every top-severity flag `confirmed` or `cleared` with why (cleared only when the words are not a
-        claim about Surven). Add any made-up client claim Python missed to `extra_flags`, word for word;
+      - a flag `cleared` in `flags_review`, with why, only when the words are not what the flag says (the
+        rest stay confirmed). Add any flag Python missed to `extra_flags` with its id, word for word;
       - objections and how Joey handled them; owed items with real due dates (use the packet's default
         dates unless he named a day); the agreed next step; the 3 fixes; up to 3 real things done well;
         3 to 6 `listen_for` moments;
       - the follow-up email: recap in Joey's voice, what he owes and when, the agreed next step, signed
-        `Joey`, under 150 words, no price, no statistics, no client stories. For a call more than 7 days old
-        (backfill), write a short re-open note instead of a recap. Address, in this order: a Fathom invitee
+        `Joey`, under 150 words, no price. For a call more than 7 days old (backfill), write a short
+        re-open note instead of a recap. Address, in this order: a Fathom invitee
         that is not Joey; `python3 -m tools.call_engine.review lookup --name "<their name>"` (Surven HQ
         GoHighLevel, read-only; pick the match whose company or date fits); Gmail `search_threads` for their
         name. Leave `to` empty if none is sure. If there is a Gmail thread with them, put its last message id
@@ -187,9 +186,9 @@ stop. Final message: `Call Engine: needs connectors <list>, add them in claude.a
   link, QUALIFYING, SUSPECT PAINS, TIMELINE, WANTS, OTHER NOTES, a red do-different box, and a folded
   "Sources and checks" list with every link. Optional text to Joey: "Call prep ready".
 - **Review, sales call:** one row in the Sales Call Library (Type, With, Link, Listen for, notes, Watched
-  unchecked); the page holds the scorecard with made-up client claims quoted at the top, the numbers,
-  objections, what Joey owes with dates, the next step, the 3 fixes, and timestamped Listen-for links. One
-  Gmail draft follow-up to the prospect. Optional text to Joey with owed items.
+  unchecked); the page holds the scorecard, the numbers, flagged lines quoted word for word, objections,
+  what Joey owes with dates, the next step, the 3 fixes, and timestamped Listen-for links. One Gmail draft
+  follow-up to the prospect. Optional text to Joey with owed items.
 - **Review, coaching call:** one row in the LS Call Library (Type Coaching, Watched unchecked) with 5
   takeaways.
 - Working files only in `/tmp/call_engine/`. Nothing about a prospect is ever written to this repo.
@@ -209,4 +208,4 @@ stop. Final message: `Call Engine: needs connectors <list>, add them in claude.a
 One line, the one `finish` printed, plus anything that needs Joey: connectors missing, a held page or
 draft, a likely sales call left out, copy-check warnings, or "text failed". Examples:
 `Call Prep: 2 call(s), 2 page(s) written in Notion Call Prep. 10:00 AM Pat (Discovery); 2:00 PM Morgan (Onboarding).`
-`Call Review: 1 sales call(s) reviewed, 1 row(s) added, 1 follow-up draft(s) in Gmail, 0 coaching takeaway(s). Pat Discovery: you owe PDF by Fri 10/30; 2 made-up client claim(s) flagged`
+`Call Review: 1 sales call(s) reviewed, 1 row(s) added, 1 follow-up draft(s) in Gmail, 0 coaching takeaway(s). Pat Discovery: you owe PDF by Fri 10/30`

@@ -20,24 +20,7 @@ SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 # out of calendar titles ("Joey x Pat"). Pass --host to override.
 HOST_FIRST_NAMES = ("joey", "joseph")
 
-_N = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a\s+few|several|many)"
-
 FLAGS = [
-    {
-        "id": "unverified_claim", "severity": "high",
-        "label": "Claim about Surven with no source",
-        "fix": "Say only what is true today. Drop years in business, hours reviewed, client counts and "
-               "'we tested' lines unless there is a source.",
-        "patterns": [
-            r"\b(?:in\s+business|been\s+(?:doing\s+this|around|at\s+this))\b[^.?!]{0,25}\b" + _N + r"\s+(?:years?|months?)\b",
-            r"\b(?:we|I)(?:'ve|\s+have)\s+(?:already\s+)?(?:tested|proven|figured\s+out)\b",
-            r"\b\d[\d,]*\+?\s+hours\s+of\s+(?:\w+\s+){0,2}(?:recordings?|calls?|audio|tours?)\b",
-            r"\b(?:capped|limited)\s+(?:at|to)\s+\d+\b",
-            r"\b(?:at|have)\s+\d+\s+(?:clients|homes|communities)\s+(?:right\s+now|now|currently)\b",
-            r"\bonly\s+(?:\w+\s+)?(?:\d+|one|two|three|four|five)\s+(?:spots?|openings|slots)\s+left\b",
-            r"\b(?:highest|best)[\s-]+(?:converting|performing)\b",
-        ],
-    },
     {
         "id": "good_time_ask", "severity": "high",
         "label": "Asked if it is a good or bad time",

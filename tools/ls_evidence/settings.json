@@ -42,17 +42,19 @@
     "_dial_note": "A canceled call is the bridge that rang Joey first and never reached the lead, so it is not a dial.",
     "sms_statuses_not_counted": ["failed", "undelivered"],
     "quiet_hours": {"from": "20:45", "to": "08:00",
-                    "_source": "Show Up Machine quiet hours (8am to 8:45pm in the lead's time zone). The CSM confirmed a form filled after about 9pm gets its first call the next morning. A step that falls in quiet hours is due at 8am."},
+                    "_source": "Show Up Machine quiet hours (8am to 8:45pm in the lead's time zone). A text or double dial that falls in quiet hours is due at 8am."},
+    "next_day_after": "21:00",
+    "_next_day_note": "The CSM's ruling (GHL setup call, 2026-07-24): a form filled after about 9pm on the lead's clock gets its first call the next morning in work hours. So a lead who comes in after 9pm, or before 8am, starts the clock at 8am. A lead who comes in before 9pm is due right away.",
     "evening_from": "17:00",
     "morning_from": "05:00",
     "morning_until": "12:00",
-    "_morning_note": "Morning confirm: a call or text on the day of the call, from 5am until the call starts, at least 30 minutes after the booking. A call booked the same day after noon has no morning, so the box is Not due.",
+    "_morning_note": "Morning confirm: a call or text on the morning of the call (lead's clock), from 5am until noon or the call start, whichever comes first, and at least 30 minutes after the booking. A call booked the same day after that morning has no morning, so the box is Not due.",
     "confirm_minutes_after_booking": 60,
     "precall_subject_rx": "required.?urgent|pre.?call|before (our|your|the) call|video"
   },
 
   "calls": {
-    "_source": "Same rules as the Morning Sales Brief: the Discovery Call calendar counts; the Lead Suite calendar is a Google Calendar copy, so only its events titled as a discovery call count, and a copy within 30 minutes of a Discovery Call booking is the same call. Onboarding and go-live calls are client calls, never sales calls. A booking cancelled and rebooked within 60 minutes is one booking.",
+    "_source": "Same rules as the Morning Sales Brief: the Discovery Call calendar counts; the Lead Suite calendar is a Google Calendar copy, so only its events titled as a discovery call count, and a copy within 30 minutes of a Discovery Call booking is the same call. Onboarding and go-live calls are client calls, never sales calls. A booking canceled and rebooked within 60 minutes is one booking.",
     "lead_suite_title_rx": "discovery",
     "client_call_title_rx": "on[\\s-]*boarding|onboard(ed)?|go[\\s-]*live",
     "merge_minutes": 30,
@@ -67,6 +69,11 @@
     "unqualified_stages": ["Unqualified", "Wrong Number"],
     "unqualified_reason_rx": "disqual|unqualif|not qualified|wrong fit|job seek|wrong number|spam|duplicate",
     "overrides": {}
+  },
+
+  "exclude": {
+    "_source": "GHL contact ids to leave out of the evidence. Ids only, never names. v0m9gv4y7LiIYire4SAf is Joey's second own contact in Surven HQ (calls he books in Google Calendar land on it; same list as the Morning Sales Brief). Also left out on their own: Joey's alert contact (config/surven.json), contacts tagged svn-test, svn-tooltest, test-contact-delete-me or owner-joey, contacts with the Test Contact field set, and any contact with the same phone, email or full name as a GHL user of the location (a team member's own test).",
+    "contact_ids": ["v0m9gv4y7LiIYire4SAf"]
   },
 
   "conditions": [

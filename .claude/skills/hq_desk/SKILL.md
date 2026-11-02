@@ -48,11 +48,10 @@ commands, and the commands only work from the repo root). Working files land in 
      like "His plan and price". If it cannot be written without something only Joey has, leave `text` out and
      put what is missing in `missing`.
      For a regulation or licensing question, use WebSearch, read the primary source (the state agency, the
-     statute, the county office), and put the links in `sources`. Never invent a fact or a result. Surven has no
-     client results yet, so say "market benchmark" if a number is needed. If the item needs something only Joey
-     has (a Loom, a number from his notes, a call he promised, a document, the price he quoted), write a
-     `missing` line that says exactly what is missing, like "Your Loom walkthrough. Record it, then send this
-     text."
+     statute, the county office), and put the links in `sources`. Never invent a fact. If the item needs
+     something only Joey has (a Loom, a number from his notes, a call he promised, a document, the price he
+     quoted), write a `missing` line that says exactly what is missing, like "Your Loom walkthrough. Record it,
+     then send this text."
    - **Spoken material** (a call he owes, an opener): never a script. Put facts and likely objections as short
      bullets in an owed item of `kind` `note`, or in `note` (BUILD-SPEC rule 6).
    - **`action`:** replace the suggested next step only if the record shows a better one.
@@ -72,12 +71,9 @@ commands, and the commands only work from the repo root). Working files land in 
    - Name the situation, never the person. "Residents" not "patients", "families" not "leads". Never "care home"
      or "enquiry". Never "audit", "assessment", "grade", "score", or "is now a bad time". Never promise a call at
      a set time; ask when works.
-   - No price, no dollar amount, no percent and no statistic in any draft, even for a lead who heard the price on
-     a call. The copy checker blocks all of them. If an owed item needs the number (a proposal, a quote), write
-     the draft without it and put "Add the price you quoted on the call" in `missing`.
-   - Never mention case studies, client results, testimonials or success stories. Surven has none yet and the
-     checker blocks them. If an owed item promised case studies, say in `missing` that Joey must pick what to
-     send.
+   - No price and no dollar amount in any draft, even for a lead who heard the price on a call. The copy
+     checker blocks them. If an owed item needs the number (a proposal, a quote), write the draft without it
+     and put "Add the price you quoted on the call" in `missing`.
    - "Let me think about it" or "I need to talk to my partner": a 1 to 4 word acknowledgement only, like
      "Of course, take your time." Set `action` to a call from Joey in a couple of days.
    - A buying question (price, terms) goes to a call: say it is easier on a quick call and ask when they are free.

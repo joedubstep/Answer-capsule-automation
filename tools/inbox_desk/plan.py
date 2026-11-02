@@ -12,7 +12,7 @@ Rules enforced here, not left to the model:
   - beds and care type print only with a source link, and only from a state record (.gov / .us) or the home's
     own site. Directory and listing sites (Caring, A Place for Mom, Yelp, Facebook, Google...) are dropped.
   - the 3 steps, the try-this-week line and the ask come from plan_steps.json (the offer), never from the model.
-  - no price, no stats, no promises: the whole visible text passes the copy checker as prospect_email with the
+  - no price, no promises: the whole visible text passes the copy checker as prospect_email with the
     booking link required. Exit 1 when it does not.
 Engines: chrome (node + playwright, the prettiest) when it is installed and the PDF is under --max-kb, else mini
 (tools/inbox_desk/minipdf.py, about 3 KB, safe to pass to the Gmail connector as base64), else html.
