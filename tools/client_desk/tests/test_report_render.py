@@ -106,7 +106,9 @@ class Page(FakeGHL):
         self.assertIsNone(PII.search(t))
 
     def test_friday_page_before_first_report_publish(self):
-        t = text_of(self.page("friday"))
+        v = self.view("friday")
+        v["report_url"] = ""  # independent of the live config, which has the report link filled in
+        t = text_of(RD.render_page(v))
         self.assertNotIn("Open report page", t)
         self.assertIn("its link is in this run", t)
 

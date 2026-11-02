@@ -90,7 +90,8 @@ def triage(raw, cls, p, now, days=TRIAGE_DAYS):
     for cid, mm in msgs.items():
         c = contacts.get(cid)
         kind = (cls.get(cid) or {}).get("kind")
-        if not c or c.get("named") or kind in ("internal", "partner"):
+        # unnamed callers, plus named ones whose name is only a caller ID (classified unknown_caller)
+        if not c or (c.get("named") and kind != "unknown_caller") or kind in ("internal", "partner"):
             continue
         calls = [m for m in mm if M.is_call(m) and m.get("dir") == "inbound" and M.ts(m.get("when"))]
         if calls:

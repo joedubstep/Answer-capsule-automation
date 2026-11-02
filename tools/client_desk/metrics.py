@@ -8,7 +8,8 @@ Who is who (classify):
                   Agent Stage that starts "partner:". (The AGC collector's known bug is that it counts these as families.)
   not_family      Agent Stage "not a family: ...", SVN Call Outcome Not Qualified or Wrong Number, tag job-seeker.
   before_start    added before the client's start date (Splendor's location was a sandbox before go-live).
-  unknown_caller  no real name and not judged yet (Agent Stage blank or "new"): the planner's "Caller 1234" questions.
+  unknown_caller  not judged yet (Agent Stage blank or "new") and either no real name, or a name that is only the
+                  phone carrier's caller ID with no family sign (see family_signal): the "Caller 1234" questions.
   family          everyone else: a real family (the AGC collector's rule, minus partners and internal records).
 
 Every count is a plain count of records. Zero is zero; nothing is estimated.
@@ -130,6 +131,28 @@ def stage_of(c):
     return str(((c.get("fields") or {}).get("agent_stage") or "")).strip()
 
 
+# A lead source that means a person reached out (form, site, chat, ad, referral), not just a phone ring.
+INTENT_SOURCE = re.compile(r"form|website|site|chat|facebook|google|ads?\b|referr|added by|manual|import|text", re.I)
+
+
+def family_signal(c, mm, fam_deal_ids, tour_ids):
+    """True when a NAMED contact shows a sign of being a real family, not just a caller ID name on a ring.
+    Splendor's Oct 20-23 robocall wave came in as dozens of named contacts (the carrier's caller ID name)
+    with nothing but missed calls; those belong in caller triage, not in the family count (live run 11/2)."""
+    cid = c["id"]
+    if cid in fam_deal_ids or cid in tour_ids:
+        return True
+    if INTENT_SOURCE.search(str(c.get("source") or "")):
+        return True
+    for m in mm or []:
+        if m.get("dir") == "inbound" and m.get("type") in TEXT_TYPES | EMAIL_TYPES:
+            return True
+        if m.get("dir") == "outbound" and m.get("type") in TEXT_TYPES | EMAIL_TYPES | CALL_TYPES \
+                and (m.get("src") or "") not in ("workflow", "") and m.get("user"):
+            return True  # staff reached out by hand
+    return False
+
+
 def classify(raw, p):
     """{contact id: {"kind", "why"}} for every contact."""
     internal = raw.get("internal") or {}
@@ -139,6 +162,10 @@ def classify(raw, p):
     partner_deals = {o["contactId"] for o in raw.get("opportunities") or []
                      if raw.get("partner_pipeline_id") and o.get("pipelineId") == raw["partner_pipeline_id"]}
     since = et_date_start(p.get("since"))
+    fam_deals = {o["contactId"] for o in raw.get("opportunities") or []
+                 if raw.get("family_pipeline_id") and o.get("pipelineId") == raw["family_pipeline_id"]}
+    tours = {e.get("contactId") for e in raw.get("tour_events") or [] if e.get("contactId")}
+    msgs = by_contact(raw)
     out = {}
     for c in raw.get("contacts") or []:
         cid, tags = c["id"], set(c.get("tags") or [])
@@ -174,6 +201,8 @@ def classify(raw, p):
             kind, why = "before_start", "added before " + p.get("since", "")
         elif not c.get("named") and stage.lower() in ("", "new"):
             kind, why = "unknown_caller", "no name, not judged yet"
+        elif stage.lower() in ("", "new") and not family_signal(c, msgs.get(cid), fam_deals, tours):
+            kind, why = "unknown_caller", "caller ID name only, no family sign yet"
         else:
             kind, why = "family", "real family"
         out[cid] = {"kind": kind, "why": why}
