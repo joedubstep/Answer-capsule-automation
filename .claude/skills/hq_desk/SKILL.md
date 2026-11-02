@@ -92,7 +92,9 @@ commands, and the commands only work from the repo root). Working files land in 
 5. **Read the last page.** If `artifacts.hq_desk` in `config/surven.json` is set, read it with the Artifact
    tool (`action: "read"`, `url` = that link). Note the saved file path it reports; that file is `--prev`.
    If the setting is empty, or the read fails, there is no `--prev` (everything then counts as new).
-6. **Routine health.** Look for the `list_triggers` tool (ToolSearch query `list_triggers`). If it is there,
+6. **Routine health.** Routine sessions usually have `mcp__claude-code-remote__list_triggers` already loaded in
+   the tool list (it is not a deferred tool, so ToolSearch may not show it). Call it directly; only if it is not in
+   your tool list, try ToolSearch `select:mcp__claude-code-remote__list_triggers`. If it is there,
    call it once with `{"enabled": true, "recurring": true, "limit": 100}` and write `/tmp/hq_desk/routines.json`
    as a JSON list of `{"name": <name>, "status": <last_run.status, or "" when there is no last_run>}`, one per
    scheduled task. If the tool is not there, write `{"unavailable": "list_triggers is not in this session"}`.
